@@ -1,4 +1,5 @@
-﻿using Rendzu.Core;
+﻿using System.Security.Cryptography.X509Certificates;
+using Rendzu.Core;
 
 namespace Rendzu;
 
@@ -52,6 +53,8 @@ internal class Program
     static void Main( string[] args )
     {
         var playerColor = args.Length > 0 && args[0] == "--white" ? Stone.White : Stone.Black;
+        var pcColor = (Stone)(0x2 + 0x3 - (int)playerColor);
+
         const int boardSize = 15;
         var game = RendzuGame.New( boardSize );
 
@@ -89,9 +92,23 @@ internal class Program
                         Console.SetCursorPosition( Console.CursorLeft + 2, Console.CursorTop );
                     break;
                 case ConsoleKey.Spacebar:
-                    game.Board.PutStone( Console.CursorLeft / 2, Console.CursorTop, playerColor );
-                    ShowCell( game.Board, Console.CursorLeft / 2, Console.CursorTop );
+                    // put player's stone
+                    (int x, int y) current = (Console.CursorLeft / 2, Console.CursorTop);
+                    game.Board.PutStone( current.x, current.y, playerColor );
+                    ShowCell( game.Board, current.x, current.y );
                     Console.SetCursorPosition( Console.CursorLeft - 1, Console.CursorTop );
+
+                    // put PC's stone
+                    var rnd = new Random();
+                    (int x, int y) pc;
+                    do { pc = (rnd.Next( boardSize ), rnd.Next( boardSize )); } 
+                    while ( game.Board[pc.x, pc.y].Stone != Stone.None );
+
+                    Console.SetCursorPosition( pc.x * 2, pc.y );
+                    game.Board.PutStone( pc.x, pc.y, pcColor );
+                    ShowCell( game.Board, pc.x, pc.y );
+
+                    Console.SetCursorPosition( current.x * 2, current.y );
                     break;
             }
         }
