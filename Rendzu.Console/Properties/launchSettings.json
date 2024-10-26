@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Rendzu.Console": {
+      "commandName": "Project",
+      "commandLineArgs": "--white"
+    }
+  }
+}
