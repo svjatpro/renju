@@ -85,6 +85,8 @@ public class ConsoleGame(
         Console.Write( message?.PadRight( Console.WindowWidth, ' ' ) );
 
         Console.ResetColor();
+
+        // restore cursor position
         Console.SetCursorPosition( current.x, current.y );
     }
 
