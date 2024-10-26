@@ -1,11 +1,6 @@
 ﻿namespace Rendzu.Core;
 
-public enum Stone
-{
-    None = 0x01,
-    White = 0x02,
-    Black = 0x03,
-}
+public record Move( int Col, int Row, Stone Stone, int SeqNumber );
 
 public interface ICell
 {
@@ -22,17 +17,11 @@ public interface IBoard
     
     ICell this[int col, int row] { get; }
 
+    Move? LastMove { get; }
+
     void PutStone( int col, int row, Stone stone );
-}
-
-public class RendzuGame
-{
-    public IBoard Board { get; private set; } = null!;
-
-    public static RendzuGame New( int size )
-    {
-        return new RendzuGame { Board = new Board( size ) };
-    }
+    
+    event EventHandler<Move> StoneMoved;
 }
 
 internal class Board : IBoard
@@ -65,10 +54,18 @@ internal class Board : IBoard
         }
     }
 
+    public Move? LastMove { get; private set; }
+
     public void PutStone( int col, int row, Stone stone )
     {
         Cells[col, row].Stone = stone;
 
+        LastMove = new Move( col, row, stone, LastMove?.SeqNumber ?? 0 );
+
+        StoneMoved?.Invoke( this, LastMove );
+
         // TODO: add move index
     }
+
+    public event EventHandler<Move>? StoneMoved;
 }
