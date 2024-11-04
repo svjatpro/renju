@@ -5,11 +5,11 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyName>rendzu</AssemblyName>
+    <AssemblyName>renju</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Rendzu.Core\Rendzu.Core.csproj" />
+    <ProjectReference Include="..\Renju.Core\Renju.Core.csproj" />
   </ItemGroup>
 
 </Project>

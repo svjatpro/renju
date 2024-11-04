@@ -1,0 +1,107 @@
+﻿using Renju.Core.Board;
+using Renju.Core.BoardAnalyser;
+using Renju.Core.Extensions;
+
+namespace Renju.Core.RenjuGame;
+
+internal class Referee : IReferee
+{
+    #region Private Fields
+
+    private readonly IBoard Board;
+    private readonly Dictionary<Stone, BoardAnalyzer> BoardAnalyzers;
+
+    private void StoneMoved(object? sender, Move move)
+    {
+        // check for game over
+        var figures = BoardAnalyzers[move.Stone][move.Col, move.Row];
+        if ( figures.Any( f => 
+                f.Value == FigureType.Five || 
+                (move.Stone == Stone.White && f.Value == FigureType.SixOrMore) ) )
+        {
+            IsGameOver = true;
+            Winner = move.Stone;
+            return;
+        }
+
+        // process move
+        BoardAnalyzers[move.Stone].ProcessMove( move );
+        BoardAnalyzers[move.Stone.Opposite()].ProcessMove( move );
+
+        // check for draw
+        for (var col = 0; col < Board.Size; col++)
+        {
+            for (var row = 0; row < Board.Size; row++)
+            {
+                if (Board[col, row].Stone == Stone.None)
+                    return;
+            }
+        }
+
+        // there is no allowed moves
+        IsGameOver = true;
+    }
+    
+    #endregion
+
+    public Referee(IBoard board)
+    {
+        Board = board;
+        Board.StoneMoved += StoneMoved;
+
+        BoardAnalyzers = new Dictionary<Stone, BoardAnalyzer>
+        {
+            { Stone.Black, new BoardAnalyzer( board, Stone.Black ) },
+            { Stone.White, new BoardAnalyzer( board, Stone.White ) },
+        };
+    }
+
+    public bool MoveAllowed(int col, int row, Stone stone)
+    {
+        return MoveAllowed(col, row, stone, out _);
+    }
+
+    public bool MoveAllowed(int col, int row, Stone stone, out string? message)
+    {
+        message = null;
+
+        // game is over
+        if (IsGameOver)
+            message = "Game is over.";
+
+        // border size check
+        else if (col < 0 || col >= Board.Size || row < 0 || row >= Board.Size)
+            message = "Cell is out of the board.";
+
+        // cell is empty
+        else if (Board[col, row].Stone != Stone.None)
+            message = "Cell is not empty.";
+
+        // right player's (by stone color) turn
+        else if (Board.LastMove?.Stone == stone)
+            message = "It's not your turn.";
+
+        // 3x3
+        else if ( stone == Stone.Black && BoardAnalyzers[stone][col, row].Count( f => f.Value == FigureType.OpenThree ) > 1 )
+        {
+            message = "3x3 rule violation.";
+        }
+
+        // 4x4
+        else if ( stone == Stone.Black && BoardAnalyzers[stone][col, row].Count( f => f.Value == FigureType.OpenFour ) > 1 )
+        {
+            message = "4x4 rule violation.";
+        }
+
+        // 6+
+        else if ( stone == Stone.Black && BoardAnalyzers[stone][col, row].Any( f => f.Value == FigureType.SixOrMore ) )
+        {
+            message = "6+ rule violation.";
+        }
+
+        return message == null;
+    }
+
+    public bool IsGameOver { get; private set; } = false;
+    public Stone Winner { get; private set; } = Stone.None;
+}

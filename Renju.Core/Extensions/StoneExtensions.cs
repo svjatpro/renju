@@ -1,4 +1,4 @@
-﻿namespace Rendzu.Core.Extensions;
+﻿namespace Renju.Core.Extensions;
 
 public static class StoneExtensions
 {
