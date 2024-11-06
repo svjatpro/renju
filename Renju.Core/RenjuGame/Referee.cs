@@ -1,5 +1,4 @@
-﻿using Renju.Core.Board;
-using Renju.Core.BoardAnalyser;
+﻿using Renju.Core.BoardAnalyser;
 using Renju.Core.Extensions;
 
 namespace Renju.Core.RenjuGame;
@@ -21,6 +20,7 @@ internal class Referee : IReferee
         {
             IsGameOver = true;
             Winner = move.Stone;
+            GameOver?.Invoke( this, Winner );
             return;
         }
 
@@ -37,9 +37,10 @@ internal class Referee : IReferee
                     return;
             }
         }
-
         // there is no allowed moves
         IsGameOver = true;
+        Winner = Stone.None;
+        GameOver?.Invoke( this, Winner );
     }
     
     #endregion
@@ -55,15 +56,10 @@ internal class Referee : IReferee
             { Stone.White, new BoardAnalyzer( board, Stone.White ) },
         };
     }
-
+    
     public bool MoveAllowed(int col, int row, Stone stone)
     {
-        return MoveAllowed(col, row, stone, out _);
-    }
-
-    public bool MoveAllowed(int col, int row, Stone stone, out string? message)
-    {
-        message = null;
+        string? message = null;
 
         // game is over
         if (IsGameOver)
@@ -99,9 +95,13 @@ internal class Referee : IReferee
             message = "6+ rule violation.";
         }
 
+        if( message != null ) ForbiddenMove?.Invoke( this, message );
         return message == null;
     }
 
     public bool IsGameOver { get; private set; } = false;
     public Stone Winner { get; private set; } = Stone.None;
+
+    public event EventHandler<string>? ForbiddenMove;
+    public event EventHandler<Stone>? GameOver;
 }

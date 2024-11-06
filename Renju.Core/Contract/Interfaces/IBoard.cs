@@ -8,6 +8,7 @@ public interface IBoard
 
     Move? LastMove { get; }
 
+    // todo: remove from interface
     void PutStone(int col, int row, Stone stone);
 
     event EventHandler<Move> StoneMoved;
