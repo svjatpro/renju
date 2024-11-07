@@ -14,6 +14,7 @@ public class ConsoleGame(
 {
     private Stone PcColor => playerColor.Opposite();
     private RenjuGame Game = null!;
+    private bool BreakTheGame;
 
     private void ShowBoard( IBoard board )
     {
@@ -84,7 +85,7 @@ public class ConsoleGame(
 
         System.Console.SetCursorPosition( 1, row ?? messageRow );
         System.Console.ForegroundColor = color;
-        System.Console.Write( message?.PadRight( System.Console.WindowWidth, ' ' ) );
+        System.Console.Write( message.PadRight( System.Console.WindowWidth, ' ' ) );
 
         System.Console.ResetColor();
 
@@ -92,41 +93,35 @@ public class ConsoleGame(
         System.Console.SetCursorPosition( current.x, current.y );
     }
 
-    private bool TryToMove( RenjuGame game, (int col, int row) cell, Stone stone )
+    private void ProcessPressedKey( ConsoleKeyInfo key )
     {
-        // check if move is allowed
-        if ( !game.Referee.MoveAllowed( cell.col, cell.row, stone ) ) return false;
-        
-        // clear message line
-        //ShowMessage( " ", ConsoleColor.DarkGray );
-
-        // put stone
-        game.Board.PutStone( cell.col, cell.row, stone );
-
-        // show new stone
-        //ShowCell( game.Board, cell );
-
-        // check if game is over
-        //if ( game.Referee.IsGameOver )
-        //{
-        //    if( game.Referee.Winner == playerColor )
-        //        ShowMessage( "You win!", ConsoleColor.Green, statusRow );
-        //    else if ( game.Referee.Winner == PcColor )
-        //        ShowMessage( "You lose!", ConsoleColor.Red, statusRow );
-        //    else
-        //        ShowMessage( "Draw!", ConsoleColor.Yellow, statusRow );
-        //}
-
-        return true;
+        switch ( key.Key )
+        {
+            case ConsoleKey.Escape:
+                BreakTheGame = true;
+                return;
+            // todo: add other keys
+        }
     }
-
-    public void Run()
+    private void Initialize()
     {
+        // prepare console
         System.Console.Clear();
         System.Console.WriteLine( " Renju v3.0; Sviatoslav Prokipets (c)" );
         System.Console.WriteLine();
 
-        Game = new RenjuGame( boardSize, playerColor );
+        // initialize players
+        var (pc, human) = (
+            Player.PcPlayer(),
+            Player.ConsoleHuman( boardStartCol, boardStartRow ));
+        human.OtherKeyPressed += ( _, key ) => ProcessPressedKey( key );
+
+        // initialize game
+        Game = new RenjuGame( boardSize,
+            playerColor == Stone.Black ? human : pc,
+            playerColor == Stone.White ? human : pc );
+        
+        // initialize referee
         Game.Referee.GameOver += ( _, winner ) =>
         {
             if ( winner == playerColor )
@@ -137,60 +132,40 @@ public class ConsoleGame(
                 ShowMessage( "Draw!", ConsoleColor.Yellow, statusRow );
         };
         Game.Referee.ForbiddenMove += ( _, message ) => ShowMessage( message, ConsoleColor.Red );
+
+        // Initialize board
         Game.Board.StoneMoved += ( _, move ) =>
         {
             ShowMessage( " ", ConsoleColor.DarkGray, messageRow ); // clear message line
-            ShowCell( Game.Board, ( move.Col, move.Row ) );
+            ShowCell( Game.Board, (move.Col, move.Row) );
         };
 
+        // show board
         ShowBoard( Game.Board );
 
         System.Console.ResetColor();
         System.Console.SetCursorPosition( boardStartCol, boardStartRow );
-        ConsoleKeyInfo key = default;
-        while ( key.Key != ConsoleKey.Escape )
+    }
+    
+    public void Run()
+    {
+        Initialize();
+
+        while ( true )
         {
-            key = System.Console.ReadKey( true );
+            if( Game.Referee.IsGameOver )
+                ProcessPressedKey( System.Console.ReadKey( true ) );
+            else 
+                Game.TryProceedMove();
 
-            switch ( key.Key )
+            if ( BreakTheGame )
             {
-                case ConsoleKey.UpArrow:
-                    if ( System.Console.CursorTop - boardStartRow > 0 )
-                        System.Console.SetCursorPosition( System.Console.CursorLeft, System.Console.CursorTop - 1 );
-                    break;
-                case ConsoleKey.DownArrow:
-                    if ( System.Console.CursorTop - boardStartRow < boardSize - 1 )
-                        System.Console.SetCursorPosition( System.Console.CursorLeft, System.Console.CursorTop + 1 );
-                    break;
-                case ConsoleKey.LeftArrow:
-                    if ( System.Console.CursorLeft - boardStartCol > 0 )
-                        System.Console.SetCursorPosition( System.Console.CursorLeft - 2, System.Console.CursorTop );
-                    break;
-                case ConsoleKey.RightArrow:
-                    if ( System.Console.CursorLeft - boardStartCol < boardSize * 2 - 2 )
-                        System.Console.SetCursorPosition( System.Console.CursorLeft + 2, System.Console.CursorTop );
-                    break;
-                case ConsoleKey.Spacebar:
-                    // put player's stone
-                    if ( !TryToMove( Game, (System.Console.CursorLeft / 2, System.Console.CursorTop - boardStartRow), playerColor ) )
-                        break;
+                System.Console.ResetColor();
+                System.Console.SetCursorPosition( 0, boardStartRow + boardSize );
+                System.Console.WriteLine(); 
 
-                    // put PC's stone
-                    Game.TryProceedMove();
-
-                    //if ( Game.Referee.IsGameOver ) break;
-
-                    // pc player to get a move
-                    //var rnd = new Random();
-                    //do { }
-                    //while ( !TryToMove( Game, (rnd.Next( boardSize ), rnd.Next( boardSize )), PcColor ) );
-
-                    break;
+                return;
             }
         }
-
-        System.Console.ResetColor();
-        System.Console.SetCursorPosition( 0, boardStartRow + boardSize );
-        System.Console.WriteLine();
     }
 }

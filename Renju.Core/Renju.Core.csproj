@@ -12,4 +12,8 @@
     </AssemblyAttribute>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Player\" />
+  </ItemGroup>
+
 </Project>
