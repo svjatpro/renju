@@ -153,10 +153,23 @@ public class ConsoleGame(
 
         while ( true )
         {
-            if( Game.Referee.IsGameOver )
+            if ( Game.Referee.IsGameOver )
+            {
                 ProcessPressedKey( System.Console.ReadKey( true ) );
-            else 
+            }
+            else
+            {
+                ShowMessage( 
+                    $"{Game.CurrentPlayer.Stone.ToString()}'s move ...",
+                    Game.CurrentPlayer.Stone switch
+                    {
+                        Stone.Black => ConsoleColor.DarkGray,
+                        Stone.White => ConsoleColor.White,
+                        _ => ConsoleColor.Yellow
+                    }, 
+                    statusRow );
                 Game.TryProceedMove();
+            }
 
             if ( BreakTheGame )
             {

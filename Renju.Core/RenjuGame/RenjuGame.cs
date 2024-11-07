@@ -77,6 +77,7 @@ public class PcPlayer : Player
 {
     public override bool TryProceedMove( out Move move )
     {
+        Thread.Sleep( 500 );
         // todo:
         var rnd = new Random();
         var cell = (col: rnd.Next( Board.Size ), row: rnd.Next( Board.Size ));
