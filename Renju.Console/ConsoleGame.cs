@@ -113,8 +113,7 @@ public class ConsoleGame(
         // initialize players
         var (pc, human) = (
             Player.PcPlayer(),
-            Player.ConsoleHuman( boardStartCol, boardStartRow ));
-        human.OtherKeyPressed += ( _, key ) => ProcessPressedKey( key );
+            Player.ConsoleHuman( boardStartCol, boardStartRow, ( _, key ) => ProcessPressedKey( key ) ));
 
         // initialize game
         Game = new RenjuGame( boardSize,
@@ -159,8 +158,9 @@ public class ConsoleGame(
             }
             else
             {
+                var player = Game.CurrentPlayer;
                 ShowMessage( 
-                    $"{Game.CurrentPlayer.Stone.ToString()}'s move ...",
+                    $"{player.Name} ({player.Stone.ToString()})'s move ...",
                     Game.CurrentPlayer.Stone switch
                     {
                         Stone.Black => ConsoleColor.DarkGray,

@@ -1,5 +1,4 @@
 ﻿using Renju.Core.BoardAnalyser;
-using Renju.Core.Extensions;
 
 namespace Renju.Core.RenjuGame;
 
@@ -12,21 +11,7 @@ internal class Referee : IReferee
 
     private void StoneMoved(object? sender, Move move)
     {
-        // check for game over
-        var figures = BoardAnalyzers[move.Stone][move.Col, move.Row];
-        if ( figures.Any( f => 
-                f.Value == FigureType.Five || 
-                (move.Stone == Stone.White && f.Value == FigureType.SixOrMore) ) )
-        {
-            IsGameOver = true;
-            Winner = move.Stone;
-            GameOver?.Invoke( this, Winner );
-            return;
-        }
-
-        // process move
-        BoardAnalyzers[move.Stone].ProcessMove( move );
-        BoardAnalyzers[move.Stone.Opposite()].ProcessMove( move );
+        if( IsGameOver ) return;
 
         // check for draw
         for (var col = 0; col < Board.Size; col++)
@@ -42,10 +27,28 @@ internal class Referee : IReferee
         Winner = Stone.None;
         GameOver?.Invoke( this, Winner );
     }
-    
+
+    private void MoveAnalysed( object? sender, 
+        (Move move, 
+            Dictionary<FigureDirection, FigureType> figures,
+            List<(int col, int row)> affectedCells) e )
+    {
+        var analyzer = (IBoardAnalyser) sender!;
+        var (move, figures, _) = e;
+        if ( move.Stone == analyzer.TargetStone && 
+             figures.Any( f => 
+                 f.Value == FigureType.Five || 
+                 ( move.Stone == Stone.White && f.Value == FigureType.SixOrMore ) ) )
+        {
+            IsGameOver = true;
+            Winner = move.Stone;
+            GameOver?.Invoke( this, Winner );
+        }
+    }
+
     #endregion
 
-    public Referee(IBoard board)
+    public Referee( IBoard board )
     {
         Board = board;
         Board.StoneMoved += StoneMoved;
@@ -55,8 +58,13 @@ internal class Referee : IReferee
             { Stone.Black, new BoardAnalyzer( board, Stone.Black ) },
             { Stone.White, new BoardAnalyzer( board, Stone.White ) },
         };
+
+        foreach ( var analyzer in BoardAnalyzers.Values )
+        {
+            analyzer.MoveAnalysed += MoveAnalysed;
+        }
     }
-    
+
     public bool MoveAllowed(int col, int row, Stone stone)
     {
         string? message = null;

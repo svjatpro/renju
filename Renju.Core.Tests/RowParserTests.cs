@@ -98,7 +98,11 @@ public class RowParserTests
         var leftEdge = start == 0 ? -1 : row[start - 1];
         var rightEdge = end == row.Length ? -1 : row[end];
 
-        return RowParser.IsAreaValid( row, start, length, leftEdge, rightEdge, (int)self, (int)self.Opposite(), sixAllowed );
+        return RowParser.IsAreaValid( 
+            row, rowSize: row.Length,
+            start, length, 
+            leftEdge, rightEdge, 
+            (int)self, (int)self.Opposite(), sixAllowed );
     }
 
     [TestCase( 0, 0, ExpectedResult = FigureType.ClosedTwo2, TestName = "[x, 0, 0, 1, 0] 0 - ClosedTwo2" )]

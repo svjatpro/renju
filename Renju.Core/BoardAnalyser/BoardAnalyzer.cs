@@ -1,11 +1,13 @@
-﻿
-namespace Renju.Core.BoardAnalyser;
+﻿namespace Renju.Core.BoardAnalyser;
 
 internal interface IBoardAnalyser
 {
+    Stone TargetStone { get; }
     Dictionary<FigureDirection, FigureType> this[int col, int row] { get; }
-    void ProcessMove( Move move );
-    //event EventHandler<Move> GameWon;
+    event EventHandler<(
+        Move move,
+        Dictionary<FigureDirection, FigureType> figures,
+        List<(int col, int row)> affectedCells)> MoveAnalysed;
 }
 
 internal class BoardAnalyzer : IBoardAnalyser
@@ -13,8 +15,8 @@ internal class BoardAnalyzer : IBoardAnalyser
     #region Private fields
 
     private readonly IBoard Board;
-    private readonly Stone TargetStone;
     private readonly Dictionary<FigureDirection, FigureType>[,] FiguresMap;
+    private readonly Dictionary<FigureDirection, FigureType> OccupiedCell = new();
 
     #endregion
 
@@ -22,6 +24,11 @@ internal class BoardAnalyzer : IBoardAnalyser
 
     private void InitializeFiguresMap()
     {
+        OccupiedCell[FigureDirection.Horizontal] = FigureType.None;
+        OccupiedCell[FigureDirection.Vertical] = FigureType.None;
+        OccupiedCell[FigureDirection.DiagonalLeft] = FigureType.None;
+        OccupiedCell[FigureDirection.DiagonalRight] = FigureType.None;
+
         for ( var col = 0; col < Board.Size; col++ )
         {
             for ( var row = 0; row < Board.Size; row++ )
@@ -37,42 +44,72 @@ internal class BoardAnalyzer : IBoardAnalyser
         }
     }
 
-    private void ProcessRow( IList<int> row, int rowSize, Action<(int cell, FigureType type)> action )
+    private void ProcessRow(
+        IList<int> row, int rowSize,
+        FigureDirection direction,
+        Func<int,(int col, int row)> cellResolver,
+        List<(int col, int row)> affectedCells )
     {
-        var figures = RowParser.ParseRow( row, rowSize, TargetStone, TargetStone == Stone.White );
-        foreach ( var figure in figures )
+        var rowFigures = RowParser.ParseRow( row, rowSize, TargetStone, TargetStone == Stone.White );
+        foreach ( var figure in rowFigures )
         {
-            action( figure );
+            var cell = cellResolver(figure.cell);
+            var cellFigures = FiguresMap[cell.col, cell.row];
+            if ( cellFigures[direction]! != figure.type )
+            {
+                affectedCells.Add( cell );
+                cellFigures[direction] = figure.type;
+            }
         }
     }
-    private void StoneMoved( Move move )
+
+    private void ProcessMove( Move move, out List<(int col, int row)> affectedCells )
     {
-        var currentRow = new int[Board.Size];
+        var currentLine = new int[Board.Size];
+        var lineMap = new Dictionary<int, (int col, int row)>();
+        affectedCells = [];
 
         // horizontal rows
-        //for ( var r = 0; r < Board.Size; r++ )
-        //{
-
         var row = move.Row;
-        for ( var c = 0; c < Board.Size; c++ )
-        {
-            currentRow[c] = (int)Board[c, row].Stone;
-        }
-        ProcessRow( currentRow, Board.Size, figure => FiguresMap[figure.cell, row][FigureDirection.Horizontal] = figure.type );
-        //}
+        for ( var c = 0; c < Board.Size; c++ ) currentLine[c] = (int)Board[c, row].Stone;
+
+        ProcessRow(
+            currentLine, Board.Size, FigureDirection.Horizontal, 
+            cell => (cell, row), affectedCells );
 
         // vertical rows
-        //for ( var c = 0; c < Board.Size; c++ ) 
-        //{
         var col = move.Col;
-        for ( var r = 0; r < Board.Size; r++ )
-        {
-            currentRow[r] = (int)Board[col, r].Stone;
-        }
-        ProcessRow( currentRow, Board.Size, figure => FiguresMap[col, figure.cell][FigureDirection.Vertical] = figure.type );
-        //}
+        for ( var r = 0; r < Board.Size; r++ ) currentLine[r] = (int)Board[col, r].Stone;
+        ProcessRow( 
+            currentLine, Board.Size, FigureDirection.Vertical, 
+            cell => (col, cell), affectedCells );
 
-        // todo: diagonal rows
+        // diagonal left-top to right-bottom
+        var startCol = Math.Max( move.Col - move.Row, 0 );
+        var startRow = Math.Max( move.Row - move.Col, 0 );
+        var lineIndex = 0;
+        for ( int c = startCol, r = startRow; c < Board.Size && r < Board.Size; c++, r++, lineIndex++ )
+        {
+            currentLine[lineIndex] = (int)Board[c, r].Stone;
+            lineMap[lineIndex] = ( c, r );
+        }
+
+        ProcessRow(
+            currentLine, lineIndex, FigureDirection.DiagonalLeft, 
+            cell => lineMap[cell], affectedCells );
+
+        // diagonal right-tom to left-bottom
+        startCol = Math.Min( move.Col + move.Row, Board.Size - 1 );
+        startRow = Math.Max( move.Row - move.Col, 0 );
+        lineIndex = 0;
+        for ( int c = startCol, r = startRow; c > 0 && r < Board.Size; c--, r++, lineIndex++ )
+        {
+            currentLine[lineIndex] = (int)Board[c, r].Stone;
+            lineMap[lineIndex] = ( c, r );
+        }
+        ProcessRow( 
+            currentLine, lineIndex, FigureDirection.DiagonalRight,
+            cell => lineMap[cell], affectedCells );
     }
 
     #endregion
@@ -80,18 +117,29 @@ internal class BoardAnalyzer : IBoardAnalyser
     public BoardAnalyzer( IBoard board, Stone targetStone )
     {
         Board = board;
-        //Board.StoneMoved += StoneMoved;
-        
         TargetStone = targetStone;
 
         FiguresMap = new Dictionary<FigureDirection, FigureType>[Board.Size, Board.Size];
         InitializeFiguresMap();
+
+        Board.StoneMoved += ( _, move ) =>
+        {
+            ProcessMove( move, out var affectedCells );
+
+            // notify about move analysed with figures
+            //  which are not 'potential' anymore but 'actual' in this context
+            //  as the move is already processed for the cell
+            MoveAnalysed?.Invoke( this, (move, FiguresMap[move.Col, move.Row], affectedCells) );
+
+            // clear figures map for the cell
+            FiguresMap[move.Col, move.Row] = OccupiedCell;
+        };
     }
-    
+
+    public Stone TargetStone { get; init; }
     public Dictionary<FigureDirection, FigureType> this[int col, int row] => FiguresMap[col, row];
-    
-    public void ProcessMove( Move move )
-    {
-        StoneMoved( move );
-    }
+    public event EventHandler<(
+        Move move,
+        Dictionary<FigureDirection, FigureType> figures,
+        List<(int col, int row)> affectedCells)>? MoveAnalysed;
 }

@@ -6,40 +6,50 @@ internal class RowParser
 {
     // todo: maybe we can not validate for six here
     // edge: -1, none: 0,  stone: 1 / 2
-    internal static bool IsAreaValid( IList<int> row, int start, int length, int leftEdge, int rightEdge, int self, int opponent, bool sixAllowed )
+    internal static bool IsAreaValid( 
+        IList<int> row, int rowSize,
+        int areaStart, int areaLength, 
+        int leftEdge, int rightEdge, 
+        int selfStoneColor, int opponentStoneColor, 
+        bool sixAllowed )
     {
         // must be 5 cells length
-        if( length != 5 || start + length > row.Count ) return false;
+        if( areaLength != 5 || (areaStart + areaLength) > rowSize ) return false;
 
-        // opponent stone
-        var end = start + length;
-        for ( var i = start; i < end; i++ ) if ( row[i] == opponent ) return false;
+        // opponentStoneColor stone
+        var end = areaStart + areaLength;
+        for ( var i = areaStart; i < end; i++ ) if ( row[i] == opponentStoneColor ) return false;
 
         // six
-        if ( !sixAllowed && ( leftEdge == self || rightEdge == self ) ) return false;
+        if ( !sixAllowed && ( leftEdge == selfStoneColor || rightEdge == selfStoneColor ) ) return false;
 
         return true;
     }
 
     // area must be valid
-    internal static FigureType ParseFigure( IList<int> row, int start, int length, int leftEdge, int rightEdge, int cell, int self )
+    internal static FigureType ParseFigure( 
+        IList<int> row, 
+        int figureStart, int figureLength, 
+        int leftEdge, int rightEdge, 
+        int cellIndex, 
+        int selfStoneColor )
     {
-        var end = start + length;
+        var end = figureStart + figureLength;
         var stones = 0;
         var holes = 0;
         var leftSpace = leftEdge == 0 ? 1 : 0;
         var rightSpace = rightEdge == 0 ? 1 : 0;
-        for ( int i = start, h = 0, r = 0; i < end; i++ )
+        for ( int i = figureStart, h = 0, r = 0; i < end; i++ )
         {
-            if ( i == cell || row[i] == self ) stones++;
+            if ( i == cellIndex || row[i] == selfStoneColor ) stones++;
 
             // calculate holes inside the figure
-            if ( row[i] == 0 && i != cell )
+            if ( row[i] == 0 && i != cellIndex )
             {
                 if ( stones > 0 ) h++;
                 r++; // right space not verified
             }
-            else if ( row[i] == self || i == cell )
+            else if ( row[i] == selfStoneColor || i == cellIndex )
             {
                 if ( h > 0 )
                 {
@@ -50,7 +60,7 @@ internal class RowParser
             }
 
             // calculate free space around the potential figure
-            if ( stones == 0 && i != cell && row[i] == 0 ) leftSpace++;
+            if ( stones == 0 && i != cellIndex && row[i] == 0 ) leftSpace++;
             if ( i == end - 1 && r > 0 ) rightSpace += r;
         }
 
@@ -72,18 +82,28 @@ internal class RowParser
         };
     }
 
-    internal static IList<(int cell, FigureType type)> ParseRow(IList<int> row, int rowSize, Stone targetStone, bool sixAllowed)
+    internal static IList<(int cell, FigureType type)> ParseRow(
+        IList<int> row, int rowSize, 
+        Stone targetStone, 
+        bool sixAllowed)
     {
         var target = (int)targetStone;
         var opponent = (int)targetStone.Opposite();
         var areas = new List<(int start, int length, int leftEdge, int rightEdge)>();
 
         // define all possible areas for figures
-        for ( int i = 0, l = -1, r; i < rowSize; i++)
+        for ( int i = 0, l = -1; i < rowSize - 5; i++)
         {
-            r = ( i + 5 ) < rowSize ? row[i + 5] : -1;
-            if ( IsAreaValid( row, i, 5, l, r, target, opponent, sixAllowed ) )
+            var r = ( i + 5 ) < rowSize ? row[i + 5] : -1;
+            if ( IsAreaValid( 
+                    row, rowSize,
+                    areaStart: i, areaLength: 5, 
+                    leftEdge: l, rightEdge: r, 
+                    selfStoneColor: target, opponent, 
+                    sixAllowed ) )
+            {
                 areas.Add( (start: i, length: 5, l, r) );
+            }
             l = row[i];
         }
 

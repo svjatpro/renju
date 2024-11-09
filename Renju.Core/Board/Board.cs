@@ -30,7 +30,7 @@ internal class Board : IBoard
         }
     }
 
-    public Move? LastMove { get; private set; }
+     public Move? LastMove { get; private set; }
 
     public void PutStone(int col, int row, Stone stone)
     {
@@ -45,3 +45,4 @@ internal class Board : IBoard
 
     public event EventHandler<Move>? StoneMoved;
 }
+ 
