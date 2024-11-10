@@ -147,7 +147,7 @@ public class RowParserTests
         int[] row = [0, 0, 0, 1, 0, 0, 1, 2, 0, 1, 1, 0, 0, 0];
         var figures = RowParser
             .ParseRow( row, row.Length, self, false )
-            .ToDictionary( f => f.cell, f => f.type );
+            .ToDictionary( f => f.Key, f => f.Value );
         return figures.GetValueOrDefault( cell, FigureType.None );
     }
 }

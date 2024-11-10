@@ -7,14 +7,6 @@ public class PcPlayer( string name ) : Player( name )
     private Dictionary<Stone, BoardAnalyzer> BoardAnalyzers = null!;
     private int[,] BoardWeights = null!;
 
-    //#define WEIGHT_FIVE          250 //700 //213
-    //#define WEIGHT_OPEN_FOUR     117 //150 //53
-    //#define WEIGHT_CLOSE_FOUR    29  //35  //13
-    //#define WEIGHT_OPEN_THREE    22  //25  //13
-    //#define WEIGHT_CLOSE_THREE   7   //10  //6
-    //#define WEIGHT_OPEN_TWO      4   //5   //3
-    //#define WEIGHT_CLOSE_TWO     1   //2   //1
-
     private int Center = 0;
     private static readonly Dictionary<FigureType, int> FigureWeights = new()
     {
@@ -38,7 +30,7 @@ public class PcPlayer( string name ) : Player( name )
     {
         base.StartGame( playersColor, board, referee );
         
-        Center = Board.Size / 2;
+        Center = (Board.Size / 2) - 1;
         BoardWeights = new int[Board.Size, Board.Size];
 
         BoardAnalyzers = new()
@@ -62,7 +54,7 @@ public class PcPlayer( string name ) : Player( name )
 
     public override bool TryProceedMove(out Move move)
     {
-        Thread.Sleep( 200 );
+        Thread.Sleep( 100 );
 
         var bestWeight = 0;
         var centerCoef = 0;

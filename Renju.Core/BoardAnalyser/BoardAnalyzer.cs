@@ -61,20 +61,7 @@ internal class BoardAnalyzer : IBoardAnalyser
                     cellFigures[direction] = rowFigures[i];
                 }
             }
-            else
-            {
-                cellFigures[direction] = FigureType.None;
-            }
         }
-        //foreach ( var figure in rowFigures )
-        //{
-        //    var cell = cellResolver(figure.cell);
-        //    var cellFigures = FiguresMap[cell.col, cell.row];
-        //    if ( cellFigures[direction]! != figure.type )
-        //    {
-        //        cellFigures[direction] = figure.type;
-        //    }
-        //}
     }
 
     private void ProcessMove( Move move, out List<(int col, int row)> affectedCells )
@@ -91,7 +78,6 @@ internal class BoardAnalyzer : IBoardAnalyser
             if( c != move.Col && Board[c, row].Stone == Stone.None )
                 affectedCells.Add( (c, row) );
         }
-
         ProcessRow( currentLine, Board.Size, FigureDirection.Horizontal, cell => (cell, row) );
 
         // vertical rows
@@ -115,7 +101,6 @@ internal class BoardAnalyzer : IBoardAnalyser
             if ( c != move.Col && r != move.Row && Board[c, r].Stone == Stone.None )
                 affectedCells.Add( (c, r) );
         }
-
         ProcessRow( currentLine, lineIndex, FigureDirection.DiagonalLeft, cell => lineMap[cell] );
 
         // diagonal right-tom to left-bottom
@@ -149,9 +134,8 @@ internal class BoardAnalyzer : IBoardAnalyser
             // notify about move analysed with figures
             //  which are not 'potential' anymore but 'actual' in this context
             //  as the move is already processed for the cell
+            // be careful - clearing the figures map for the cell is done must be done after the event
             MoveAnalysed?.Invoke( this, (move, FiguresMap[move.Col, move.Row], affectedCells) );
-
-            // clear figures map for the cell
             FiguresMap[move.Col, move.Row] = OccupiedCell;
         };
     }
