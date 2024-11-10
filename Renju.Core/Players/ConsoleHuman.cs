@@ -28,7 +28,7 @@ internal class ConsoleHuman(int boardStartCol, int boardStartRow, string name ) 
                     break;
                 case ConsoleKey.Spacebar:
                     // put player's stone
-                    move = new Move(Console.CursorLeft / 2, Console.CursorTop - boardStartRow, Stone);
+                    move = new Move((Console.CursorLeft - boardStartCol) / 2, Console.CursorTop - boardStartRow, Stone);
                     return true;
                 default:
                     OtherKeyPressed?.Invoke(this, key);
