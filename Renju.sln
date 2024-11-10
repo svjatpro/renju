@@ -5,7 +5,7 @@ VisualStudioVersion = 17.11.35327.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Renju.Core", "Renju.Core\Renju.Core.csproj", "{D99D8748-DF37-48D5-B60A-94087F9453D3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Renju.Console", "Renju.Console\Renju.Console.csproj", "{67C676A6-5715-412D-91BA-F9C14A1BF845}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Renju.CommandLine", "Renju.CommandLine\Renju.CommandLine.csproj", "{67C676A6-5715-412D-91BA-F9C14A1BF845}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Renju.Core.Tests", "Renju.Core.Tests\Renju.Core.Tests.csproj", "{653017C7-0340-457D-AFA5-BAA29DE88C08}"
 EndProject

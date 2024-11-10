@@ -1,6 +1,6 @@
 ﻿using Renju.Core;
 
-namespace Renju.Console;
+namespace Renju.CommandLine;
 
 internal class Program
 {

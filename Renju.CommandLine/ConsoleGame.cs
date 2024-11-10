@@ -2,7 +2,7 @@
 using Renju.Core.Extensions;
 using Renju.Core.RenjuGame;
 
-namespace Renju.Console;
+namespace Renju.CommandLine;
 
 public class ConsoleGame( 
     Stone playerColor,
@@ -18,44 +18,44 @@ public class ConsoleGame(
 
     private void ShowBoard( IBoard board )
     {
-        System.Console.SetCursorPosition( 0, 0 );
+        Console.SetCursorPosition( 0, 0 );
 
         for ( var i = 0; i < boardStartRow; i++ )
-            System.Console.WriteLine();
+            Console.WriteLine();
 
-        System.Console.ForegroundColor = ConsoleColor.DarkGray;
+        Console.ForegroundColor = ConsoleColor.DarkGray;
         const char barChar = '\u2500'; // ─
         for ( var row = 0; row < board.Size; row++ )
         {
             for ( var i = 0; i < boardStartCol; i++ )
-                System.Console.Write( ' ' );
+                Console.Write( ' ' );
 
             for ( var col = 0; col < board.Size; col++ )
             {
                 ShowCell( board, (col, row), false );
-                System.Console.ForegroundColor = ConsoleColor.DarkGray;
-                if ( col < board.Size - 1 ) System.Console.Write( barChar );
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                if ( col < board.Size - 1 ) Console.Write( barChar );
             }
-            System.Console.WriteLine();
+            Console.WriteLine();
         }
     }
     private void ShowCell( IBoard board, (int col, int row) cell, bool locateCursor = true )
     {
         // save cursor position
-        (int x, int y) current = (System.Console.CursorLeft, System.Console.CursorTop);
+        (int x, int y) current = (Console.CursorLeft, Console.CursorTop);
 
         if ( locateCursor )
-            System.Console.SetCursorPosition( boardStartCol + cell.col * 2, boardStartRow + cell.row );
+            Console.SetCursorPosition( boardStartCol + cell.col * 2, boardStartRow + cell.row );
         
         switch ( board[cell.col, cell.row].Stone )
         {
             case Stone.Black:
-                System.Console.ForegroundColor = ConsoleColor.Yellow;
-                System.Console.Write( 'x' );
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.Write( 'x' );
                 break;
             case Stone.White:
-                System.Console.ForegroundColor = ConsoleColor.White;
-                System.Console.Write( 'o' );
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.Write( 'o' );
                 break;
             case Stone.None:
                 var crossChar = cell.col switch
@@ -70,27 +70,27 @@ public class ConsoleGame(
                     _ when cell.row == board.Size - 1 => '\u2534', // ┴
                     _ => '\u253c' // ┼
                 };
-                System.Console.Write( crossChar );
+                Console.Write( crossChar );
                 break;
         }
 
         if ( locateCursor )
-            System.Console.SetCursorPosition( current.x, current.y );
+            Console.SetCursorPosition( current.x, current.y );
     }
 
     private void ShowMessage( string message, ConsoleColor color, int? row = null )
     {
         // save cursor position
-        (int x, int y) current = (System.Console.CursorLeft, System.Console.CursorTop);
+        (int x, int y) current = (Console.CursorLeft, Console.CursorTop);
 
-        System.Console.SetCursorPosition( 1, row ?? messageRow );
-        System.Console.ForegroundColor = color;
-        System.Console.Write( message.PadRight( System.Console.WindowWidth, ' ' ) );
+        Console.SetCursorPosition( 1, row ?? messageRow );
+        Console.ForegroundColor = color;
+        Console.Write( message.PadRight( Console.WindowWidth, ' ' ) );
 
-        System.Console.ResetColor();
+        Console.ResetColor();
 
         // restore cursor position
-        System.Console.SetCursorPosition( current.x, current.y );
+        Console.SetCursorPosition( current.x, current.y );
     }
 
     private void ProcessPressedKey( ConsoleKeyInfo key )
@@ -106,9 +106,9 @@ public class ConsoleGame(
     private void Initialize()
     {
         // prepare console
-        System.Console.Clear();
-        System.Console.WriteLine( " Renju v3.0; Sviatoslav Prokipets (c)" );
-        System.Console.WriteLine();
+        Console.Clear();
+        Console.WriteLine( " Renju v3.0; Sviatoslav Prokipets (c)" );
+        Console.WriteLine();
 
         // initialize players
         var (pc, human) = (
@@ -142,8 +142,8 @@ public class ConsoleGame(
         // show board
         ShowBoard( Game.Board );
 
-        System.Console.ResetColor();
-        System.Console.SetCursorPosition( boardStartCol, boardStartRow );
+        Console.ResetColor();
+        Console.SetCursorPosition( boardStartCol, boardStartRow );
     }
     
     public void Run()
@@ -154,7 +154,7 @@ public class ConsoleGame(
         {
             if ( Game.Referee.IsGameOver )
             {
-                ProcessPressedKey( System.Console.ReadKey( true ) );
+                ProcessPressedKey( Console.ReadKey( true ) );
             }
             else
             {
@@ -173,9 +173,9 @@ public class ConsoleGame(
 
             if ( BreakTheGame )
             {
-                System.Console.ResetColor();
-                System.Console.SetCursorPosition( 0, boardStartRow + boardSize );
-                System.Console.WriteLine(); 
+                Console.ResetColor();
+                Console.SetCursorPosition( 0, boardStartRow + boardSize );
+                Console.WriteLine(); 
 
                 return;
             }
