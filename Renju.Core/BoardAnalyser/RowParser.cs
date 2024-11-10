@@ -82,7 +82,7 @@ internal class RowParser
         };
     }
 
-    internal static IList<(int cell, FigureType type)> ParseRow(
+    internal static IDictionary<int, FigureType> ParseRow(
         IList<int> row, int rowSize, 
         Stone targetStone, 
         bool sixAllowed)
@@ -123,6 +123,6 @@ internal class RowParser
         return figures
             .GroupBy( f => f.cell )
             .Select( g => g.MaxBy( f => (int)f.type ) )
-            .ToList();
+            .ToDictionary(g => g.cell, g => g.type);
     }
 }

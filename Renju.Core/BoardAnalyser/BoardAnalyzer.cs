@@ -47,20 +47,34 @@ internal class BoardAnalyzer : IBoardAnalyser
     private void ProcessRow(
         IList<int> row, int rowSize,
         FigureDirection direction,
-        Func<int,(int col, int row)> cellResolver,
-        List<(int col, int row)> affectedCells )
+        Func<int,(int col, int row)> cellResolver)
     {
         var rowFigures = RowParser.ParseRow( row, rowSize, TargetStone, TargetStone == Stone.White );
-        foreach ( var figure in rowFigures )
+        for ( var i = 0; i < rowSize; i++ )
         {
-            var cell = cellResolver(figure.cell);
+            var cell = cellResolver( i );
             var cellFigures = FiguresMap[cell.col, cell.row];
-            if ( cellFigures[direction]! != figure.type )
+            if ( rowFigures.ContainsKey( i ) )
             {
-                affectedCells.Add( cell );
-                cellFigures[direction] = figure.type;
+                if ( cellFigures[direction]! != rowFigures[i] )
+                {
+                    cellFigures[direction] = rowFigures[i];
+                }
+            }
+            else
+            {
+                cellFigures[direction] = FigureType.None;
             }
         }
+        //foreach ( var figure in rowFigures )
+        //{
+        //    var cell = cellResolver(figure.cell);
+        //    var cellFigures = FiguresMap[cell.col, cell.row];
+        //    if ( cellFigures[direction]! != figure.type )
+        //    {
+        //        cellFigures[direction] = figure.type;
+        //    }
+        //}
     }
 
     private void ProcessMove( Move move, out List<(int col, int row)> affectedCells )
@@ -71,18 +85,24 @@ internal class BoardAnalyzer : IBoardAnalyser
 
         // horizontal rows
         var row = move.Row;
-        for ( var c = 0; c < Board.Size; c++ ) currentLine[c] = (int)Board[c, row].Stone;
+        for ( var c = 0; c < Board.Size; c++ )
+        {
+            currentLine[c] = (int)Board[c, row].Stone;
+            if( c != move.Col && Board[c, row].Stone == Stone.None )
+                affectedCells.Add( (c, row) );
+        }
 
-        ProcessRow(
-            currentLine, Board.Size, FigureDirection.Horizontal, 
-            cell => (cell, row), affectedCells );
+        ProcessRow( currentLine, Board.Size, FigureDirection.Horizontal, cell => (cell, row) );
 
         // vertical rows
         var col = move.Col;
-        for ( var r = 0; r < Board.Size; r++ ) currentLine[r] = (int)Board[col, r].Stone;
-        ProcessRow( 
-            currentLine, Board.Size, FigureDirection.Vertical, 
-            cell => (col, cell), affectedCells );
+        for ( var r = 0; r < Board.Size; r++ )
+        {
+            currentLine[r] = (int)Board[col, r].Stone;
+            if ( r != move.Row && Board[col, r].Stone == Stone.None )
+                affectedCells.Add( (col, r) );
+        }
+        ProcessRow( currentLine, Board.Size, FigureDirection.Vertical, cell => (col, cell) );
 
         // diagonal left-top to right-bottom
         var startCol = Math.Max( move.Col - move.Row, 0 );
@@ -92,24 +112,24 @@ internal class BoardAnalyzer : IBoardAnalyser
         {
             currentLine[lineIndex] = (int)Board[c, r].Stone;
             lineMap[lineIndex] = ( c, r );
+            if ( c != move.Col && r != move.Row && Board[c, r].Stone == Stone.None )
+                affectedCells.Add( (c, r) );
         }
 
-        ProcessRow(
-            currentLine, lineIndex, FigureDirection.DiagonalLeft, 
-            cell => lineMap[cell], affectedCells );
+        ProcessRow( currentLine, lineIndex, FigureDirection.DiagonalLeft, cell => lineMap[cell] );
 
         // diagonal right-tom to left-bottom
         startCol = Math.Min( move.Col + move.Row, Board.Size - 1 );
-        startRow = Math.Max( move.Row - move.Col, 0 );
+        startRow = Math.Max( move.Row - ( Board.Size - 1 - move.Col ), 0 );
         lineIndex = 0;
         for ( int c = startCol, r = startRow; c > 0 && r < Board.Size; c--, r++, lineIndex++ )
         {
             currentLine[lineIndex] = (int)Board[c, r].Stone;
             lineMap[lineIndex] = ( c, r );
+            if ( c != move.Col && r != move.Row && Board[c, r].Stone == Stone.None )
+                affectedCells.Add( (c, r) );
         }
-        ProcessRow( 
-            currentLine, lineIndex, FigureDirection.DiagonalRight,
-            cell => lineMap[cell], affectedCells );
+        ProcessRow( currentLine, lineIndex, FigureDirection.DiagonalRight, cell => lineMap[cell] );
     }
 
     #endregion
