@@ -1,13 +1,14 @@
 ﻿using Renju.Core.BoardAnalyser;
+using Renju.Core.Extensions;
 
 namespace Renju.Core.Players;
 
 public class PcPlayer( string name ) : Player( name )
 {
     private Dictionary<Stone, BoardAnalyzer> BoardAnalyzers = null!;
-    private int[,] BoardWeights = null!;
+    private int[,,] BoardWeights = null!;
 
-    private int Center = 0;
+    private int Center;
     private static readonly Dictionary<FigureType, int> FigureWeights = new()
     {
         { FigureType.None, 0 },
@@ -31,7 +32,7 @@ public class PcPlayer( string name ) : Player( name )
         base.StartGame( playersColor, board, referee );
         
         Center = (Board.Size / 2) - 1;
-        BoardWeights = new int[Board.Size, Board.Size];
+        BoardWeights = new int[Board.Size, Board.Size, 2];
 
         BoardAnalyzers = new()
         {
@@ -39,17 +40,21 @@ public class PcPlayer( string name ) : Player( name )
             {Stone.White, new BoardAnalyzer(Board, Stone.White)}
         };
 
-        BoardAnalyzers[Stone].MoveAnalysed += ( sender, e ) =>
+
+        foreach ( var boardAnalyzer in BoardAnalyzers.Values )
         {
-            var analyzer = (IBoardAnalyser) sender!;
-            var (_, _, affectedCells) = e;
-            foreach ( var cell in affectedCells )
+            boardAnalyzer.MoveAnalysed += ( sender, e ) =>
             {
-                var cellFigures = analyzer[cell.col, cell.row];
-                var weight = cellFigures.Values.Sum( f => FigureWeights[f] );
-                BoardWeights[cell.col, cell.row] = weight;
-            }
-        };
+                var analyzer = (IBoardAnalyser) sender!;
+                var (_, _, affectedCells) = e;
+                foreach ( var cell in affectedCells )
+                {
+                    var cellFigures = analyzer[cell.col, cell.row];
+                    var weight = cellFigures.Values.Sum( f => FigureWeights[f] );
+                    BoardWeights[cell.col, cell.row, (int) analyzer.TargetStone - 1] = weight;
+                }
+            };
+        }
     }
 
     public override bool TryProceedMove(out Move move)
@@ -63,18 +68,19 @@ public class PcPlayer( string name ) : Player( name )
         {
             for ( var row = 0; row < Board.Size; row++ )
             {
+                var cellWeight = BoardWeights[col, row, 0] + BoardWeights[col, row, 1];
                 if ( Board[col, row].Stone != Stone.None ||
-                     BoardWeights[col, row] < bestWeight ||
+                     cellWeight < bestWeight ||
                      !Referee.MoveAllowed( col, row, Stone ) )
                 {
                     continue;
                 }
 
                 var coef = Math.Abs( col - Center ) + Math.Abs( row - Center );
-                if ( BoardWeights[col, row] > bestWeight || (
-                     BoardWeights[col, row] == bestWeight && ( centerCoef == 0 || coef < centerCoef ) ) )
+                if ( cellWeight > bestWeight || (
+                     cellWeight == bestWeight && ( centerCoef == 0 || coef < centerCoef ) ) )
                 {
-                    bestWeight = BoardWeights[col, row];
+                    bestWeight = cellWeight;
                     move = new Move( col, row, Stone );
                     centerCoef = coef;
                 }

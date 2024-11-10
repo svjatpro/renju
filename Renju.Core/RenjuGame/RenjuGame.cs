@@ -3,7 +3,7 @@
 namespace Renju.Core.RenjuGame;
 
 public class RenjuGame
-{
+{   
     private Dictionary<Stone, IPlayer> Players;
     private Stone CurrentStone = Stone.Black;
 
