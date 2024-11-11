@@ -1,6 +1,7 @@
 ﻿using Renju.Core;
 using Renju.Core.Extensions;
 using Renju.Core.RenjuGame;
+using System.Diagnostics;
 
 namespace Renju.CommandLine;
 
@@ -16,6 +17,9 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
     private const int StatusRow = 1;
     private const int MessageRow = 2;
     private int InfoStartRow;
+    private DebugMode Debug = DebugMode.None;
+
+    private enum DebugMode { None = 0, Self = 1, Opponent = 2 }
 
     private void WriteInfo()
     {
@@ -47,7 +51,6 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
     }
     private void WriteBoard( IBoard board )
     {
-        const char barChar = '\u2500'; // ─
         for ( var row = 0; row < board.Size; row++ )
         {
             Console.SetCursorPosition( BoardStartCol - 1, BoardStartRow + row );
@@ -55,12 +58,7 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
             Style.Board.SetColor();
             Console.Write( ' ' ); // border left frame
 
-            for ( var col = 0; col < board.Size; col++ )
-            {
-                WriteCell( board, (col, row), false );
-                Style.Board.SetColor();
-                if ( col < board.Size - 1 ) Console.Write( barChar );
-            }
+            for ( var col = 0; col < board.Size; col++ ) WriteCell( board, (col, row), false );
             Console.Write( ' ' ); // border right frame
             Console.WriteLine();
         }
@@ -73,6 +71,8 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
         if ( locateCursor )
             Console.SetCursorPosition( BoardStartCol + cell.col * 2, BoardStartRow + cell.row );
 
+        const char barChar = '\u2500'; // ─
+        var cellCharLength = 1;
         switch ( board[cell.col, cell.row].Stone )
         {
             case Stone.Black:
@@ -96,8 +96,42 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
                     _ when cell.row == board.Size - 1 => '\u2534', // ┴
                     _ => '\u253c' // ┼
                 };
-                Console.Write( crossChar );
+                if ( Debug != DebugMode.None )
+                {
+                    var debugStone = Debug == DebugMode.Self ? PcColor : playerColor;
+                    var debugWeight = Game.Players[PcColor]
+                        .GetDebug( cell.col, cell.row, debugStone )
+                        .ToString();
+                    var debug =
+                        debugWeight == "0" ? "" :
+                        ( debugWeight.Length > 2 ? $"{debugWeight[0]}~" : debugWeight );
+
+                    if ( debug.Length > 0 )
+                    {
+                        Style.Help.SetColor();
+                        Console.Write( debug );
+                        cellCharLength = debug.Length;
+                    }
+                    else
+                    {
+                        Style.Board.SetColor();
+                        Console.Write( crossChar );
+                        cellCharLength = 1;
+                    }
+                }
+                else
+                {
+                    Style.Board.SetColor();
+                    Console.Write( crossChar );
+                    cellCharLength = 1;
+                }
                 break;
+        }
+
+        if ( cellCharLength == 1 && cell.col < board.Size - 1 )
+        {
+            Style.Board.SetColor();
+            Console.Write( barChar );
         }
 
         if ( locateCursor )
@@ -126,7 +160,17 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
             case ConsoleKey.Escape:
                 BreakTheGame = true;
                 return;
-            // todo: add other keys
+            case ConsoleKey.D:
+                (int x, int y) current = (Console.CursorLeft, Console.CursorTop);
+                Debug = Debug switch
+                {
+                    DebugMode.None => DebugMode.Self,
+                    DebugMode.Self => DebugMode.Opponent,
+                    _ => DebugMode.None
+                };
+                WriteBoard( Game.Board );
+                Console.SetCursorPosition( current.x, current.y );
+                return;
         }
     }
 
@@ -220,7 +264,7 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
                         Stone.Black => Style.PlayerBlack,
                         Stone.White => Style.PlayerWhite,
                         _ => Style.Info
-                    }, 
+                    },
                     StatusRow );
                 Game.TryProceedMove();
             }

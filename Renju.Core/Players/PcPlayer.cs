@@ -87,4 +87,9 @@ public class PcPlayer( string name ) : Player( name )
         }
         return true;
     }
+
+    public override int GetDebug( int col, int row, Stone stone )
+    {
+        return BoardWeights[col, row, (int) stone - 1];
+    }
 }
