@@ -1,6 +1,8 @@
-﻿namespace Renju.Core.Players;
+﻿using Renju.Core;
 
-internal class ConsoleHuman(int boardStartCol, int boardStartRow, string name ) : Player( name )
+namespace Renju.CommandLine;
+
+internal class ConsolePlayer( int boardStartCol, int boardStartRow, string name ) : Player( name )
 {
     public override bool TryProceedMove(out Move move)
     {

@@ -18,16 +18,6 @@ public abstract class Player( string name ) : IPlayer
     }
 
     public abstract bool TryProceedMove( out Move move );
-
-    public static IPlayer ConsoleHuman(
-        int boardStartCol, int boardStartRow,
-        Action<IPlayer, ConsoleKeyInfo>? otherKeyPressed = null,
-        string name = "Human" )
-    {
-        var player = new ConsoleHuman( boardStartCol, boardStartRow, name );
-        player.OtherKeyPressed += (_, k) => otherKeyPressed?.Invoke(player, k);
-        return player;
-    }
-
+    
     public static IPlayer PcPlayer( string name = "PC" ) => new PcPlayer( name );
 }

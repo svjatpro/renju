@@ -59,7 +59,7 @@ public class PcPlayer( string name ) : Player( name )
 
     public override bool TryProceedMove(out Move move)
     {
-        Thread.Sleep( 100 );
+        Thread.Sleep( 300 );
 
         var bestWeight = 0;
         var centerCoef = 0;

@@ -162,11 +162,11 @@ public class ConsoleGame(
         Console.WriteLine( " Renju v3.0; Sviatoslav Prokipets (c)" );
         Console.WriteLine();
         Console.ResetColor();
-        
+
         // initialize players
-        var (pc, human) = (
-            Player.PcPlayer(),
-            Player.ConsoleHuman( boardStartCol, boardStartRow, ( _, key ) => ProcessPressedKey( key ) ));
+        var pc = Player.PcPlayer();
+        var human = new ConsolePlayer( boardStartCol, boardStartRow, "Human" );
+        human.OtherKeyPressed += ( _, k ) => ProcessPressedKey( k );
 
         // initialize game
         Game = new RenjuGame( boardSize,
