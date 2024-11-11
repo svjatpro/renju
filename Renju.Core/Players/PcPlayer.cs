@@ -1,5 +1,4 @@
 ﻿using Renju.Core.BoardAnalyser;
-using Renju.Core.Extensions;
 
 namespace Renju.Core.Players;
 
@@ -12,19 +11,19 @@ public class PcPlayer( string name ) : Player( name )
     private static readonly Dictionary<FigureType, int> FigureWeights = new()
     {
         { FigureType.None, 0 },
+        { FigureType.ClosedTwo3, 2 },
+        { FigureType.ClosedTwo2, 3 },
+        { FigureType.ClosedTwo1, 4 },
         { FigureType.ClosedTwo, 5 },
-        { FigureType.ClosedTwo1, 6 },
-        { FigureType.ClosedTwo2, 7 },
-        { FigureType.ClosedTwo3, 8 },
-        { FigureType.OpenTwo, 10 },
-        { FigureType.ClosedThree, 20 },
-        { FigureType.ClosedThree1, 22 },
-        { FigureType.ClosedThree2, 24 },
-        { FigureType.OpenThree, 50 },
-        { FigureType.ClosedFour, 80 },
-        { FigureType.OpenFour, 200 },
-        { FigureType.SixOrMore, 250 },
-        { FigureType.Five, 500 }
+        { FigureType.OpenTwo, 15 },
+        { FigureType.ClosedThree2, 25 },
+        { FigureType.ClosedThree1, 27 },
+        { FigureType.ClosedThree, 29 },
+        { FigureType.OpenThree, 90 },
+        { FigureType.ClosedFour, 99 },
+        { FigureType.OpenFour, 400 },
+        { FigureType.SixOrMore, 1201 },
+        { FigureType.Five, 1201 }
     };
 
     public override void StartGame( Stone playersColor, IBoard board, IReferee referee )
