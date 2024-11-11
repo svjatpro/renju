@@ -4,12 +4,11 @@ namespace Renju.Core.RenjuGame;
 
 public class RenjuGame
 {   
-    private Dictionary<Stone, IPlayer> Players;
     private Stone CurrentStone = Stone.Black;
 
+    public readonly Dictionary<Stone, IPlayer> Players;
     public IReferee Referee { get; init; }
     public IBoard Board { get; init; }
-
     public IPlayer CurrentPlayer => Players[CurrentStone];
 
     public RenjuGame( int size, IPlayer black, IPlayer white )
