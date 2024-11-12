@@ -1,7 +1,6 @@
 ﻿using Renju.Core;
 using Renju.Core.Extensions;
 using Renju.Core.RenjuGame;
-using System.Diagnostics;
 
 namespace Renju.CommandLine;
 
@@ -171,6 +170,12 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
                 WriteBoard( Game.Board );
                 Console.SetCursorPosition( current.x, current.y );
                 return;
+            case ConsoleKey.N:
+                // start new game
+                return;
+            case ConsoleKey.H:
+                // show help instead of board
+                return;
         }
     }
 
@@ -257,7 +262,6 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
             {
                 var player = Game.CurrentPlayer;
                 WriteMessage( 
-                    //$"{player.Name} ({player.Stone.ToString()})'s move ...",
                     $"{player.Name}'s move ...",
                     Game.CurrentPlayer.Stone switch
                     {

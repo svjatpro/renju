@@ -8,4 +8,7 @@ public static class StoneExtensions
         Stone.White => Stone.Black,
         _ => Stone.None
     };
+
+    private const int Both = (int)Stone.Black + (int)Stone.White;
+    public static int Opposite( this int stone ) => Both - stone;
 }

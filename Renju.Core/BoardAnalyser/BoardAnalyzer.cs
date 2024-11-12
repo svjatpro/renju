@@ -45,12 +45,12 @@ internal class BoardAnalyzer : IBoardAnalyser
     }
 
     private void ProcessRow(
-        IList<int> row, int rowSize,
+        LineOfCells row,
         FigureDirection direction,
         Func<int,(int col, int row)> cellResolver)
     {
-        var rowFigures = RowParser.ParseRow( row, rowSize, TargetStone, TargetStone == Stone.White );
-        for ( var i = 0; i < rowSize; i++ )
+        var rowFigures = RowParser.ParseRow( row, TargetStone, TargetStone == Stone.White );
+        for ( var i = 0; i < row.Length; i++ )
         {
             var cell = cellResolver( i );
             var cellFigures = FiguresMap[cell.col, cell.row];
@@ -78,7 +78,7 @@ internal class BoardAnalyzer : IBoardAnalyser
             if( c != move.Col && Board[c, row].Stone == Stone.None )
                 affectedCells.Add( (c, row) );
         }
-        ProcessRow( currentLine, Board.Size, FigureDirection.Horizontal, cell => (cell, row) );
+        ProcessRow( new LineOfCells( currentLine, Board.Size ), FigureDirection.Horizontal, cell => (cell, row) );
 
         // vertical rows
         var col = move.Col;
@@ -88,7 +88,7 @@ internal class BoardAnalyzer : IBoardAnalyser
             if ( r != move.Row && Board[col, r].Stone == Stone.None )
                 affectedCells.Add( (col, r) );
         }
-        ProcessRow( currentLine, Board.Size, FigureDirection.Vertical, cell => (col, cell) );
+        ProcessRow( new LineOfCells( currentLine, Board.Size ), FigureDirection.Vertical, cell => (col, cell) );
 
         // diagonal left-top to right-bottom
         var startCol = Math.Max( move.Col - move.Row, 0 );
@@ -101,7 +101,7 @@ internal class BoardAnalyzer : IBoardAnalyser
             if ( c != move.Col && r != move.Row && Board[c, r].Stone == Stone.None )
                 affectedCells.Add( (c, r) );
         }
-        ProcessRow( currentLine, lineIndex, FigureDirection.DiagonalLeft, cell => lineMap[cell] );
+        ProcessRow( new LineOfCells( currentLine, lineIndex ), FigureDirection.DiagonalLeft, cell => lineMap[cell] );
 
         // diagonal right-tom to left-bottom
         startCol = Math.Min( move.Col + move.Row, Board.Size - 1 );
@@ -114,7 +114,7 @@ internal class BoardAnalyzer : IBoardAnalyser
             if ( c != move.Col && r != move.Row && Board[c, r].Stone == Stone.None )
                 affectedCells.Add( (c, r) );
         }
-        ProcessRow( currentLine, lineIndex, FigureDirection.DiagonalRight, cell => lineMap[cell] );
+        ProcessRow( new LineOfCells( currentLine, lineIndex ), FigureDirection.DiagonalRight, cell => lineMap[cell] );
     }
 
     #endregion

@@ -1,67 +1,7 @@
 ﻿using NUnit.Framework;
 using Renju.Core.BoardAnalyser;
-using Renju.Core.Extensions;
 
 namespace Renju.Core.Tests;
-
-// --------------------------------------------------------------
-//  six not allowed:
-//int[] row = [0, 0, 0, 1, 0, 0, 1, 2, 0, 1, 1, 0, 0, 0];
-// --------------------------------------------------------------
-// get all possible 'areas' for figures:
-//
-//            [0, 0, 0, 1, 0];                              // left: edge, right: none
-//                  [0, 1, 0, 0, 1];                        // left: none, right: opponent
-//                                    [0, 1, 1, 0, 0];      // left: opponent, right: none
-//                                       [1, 1, 0, 0, 0];   // left: none, right: edge
-// --------------------------------------------------------------
-// get all valid figures:
-//
-//            [x, 0, 0, 1, 0];                              - close two
-//            [0, x, 0, 1, 0];                              - close two
-//            [0, 0, x, 1, 0];                              - close two
-//            [0, 0, 0, 1, x];                              - close two
-//                  [x, 1, 0, 0, 1];                        - close three
-//                  [0, 1, x, 0, 1];                        - close three
-//                  [0, 1, 0, x, 1];                        - close three
-//                                    [x, 1, 1, 0, 0];      - close three
-//                                    [0, 1, 1, x, 0];      - open three
-//                                    [0, 1, 1, 0, x];      - close three
-//                                       [1, 1, x, 0, 0];   - open three
-//                                       [1, 1, 0, x, 0];   - close three
-//                                       [1, 1, 0, 0, x];   - close three
-
-
-// --------------------------------------------------------------
-//  six allowed:
-//int[] row = [0, 0, 0, 1, 0, 0, 1, 2, 0, 1, 1, 0, 0, 0];
-// --------------------------------------------------------------
-// get all possible 'areas' for figures:
-//
-//            [0, 0, 0, 1, 0];
-//                  [0, 1, 0, 0, 1];
-//                                    [0, 1, 1, 0, 0];
-//                                       [1, 1, 0, 0, 0];
-// --------------------------------------------------------------
-// get all valid figures:
-//
-//            [x, 0, 0, 1, 0];                              - close two
-//            [0, x, 0, 1, 0];                              - close two
-//            [0, 0, x, 1, 0];                              - close two
-//            [0, 0, 0, 1, x];                              - close two
-//               [x, 0, 1, 0, 0];                           - close two
-//               [0, x, 1, 0, 0];                           - close two
-//               [0, 0, 1, x, 0];                           - close two
-//               [0, 0, 1, 0, x];                           - close two
-//                  [x, 1, 0, 0, 1];                        - close three
-//                  [0, 1, x, 0, 1];                        - close three
-//                  [0, 1, 0, x, 1];                        - close three
-//                                    [x, 1, 1, 0, 0];      - close three
-//                                    [0, 1, 1, x, 0];      - open three
-//                                    [0, 1, 1, 0, x];      - close three
-//                                       [1, 1, x, 0, 0];   - open three
-//                                       [1, 1, 0, x, 0];   - close three
-//                                       [1, 1, 0, 0, x];   - close three
 
 [TestFixture]
 public class RowParserTests
@@ -93,16 +33,8 @@ public class RowParserTests
     [TestCase( 9, 5, Stone.Black, false, ExpectedResult = false, TestName = "9 5 - opponent" )]
     public bool IsAreaValidTests( int start, int length, Stone self, bool sixAllowed )
     {
-        int[] row = [0, 0, 0, 1, 0, 0, 1, 2, 0, 1, 1, 0, 0, 0];
-        var end = start + length;
-        var leftEdge = start == 0 ? -1 : row[start - 1];
-        var rightEdge = end == row.Length ? -1 : row[end];
-
-        return RowParser.IsAreaValid( 
-            row, rowSize: row.Length,
-            start, length, 
-            leftEdge, rightEdge, 
-            (int)self, (int)self.Opposite(), sixAllowed );
+        var row = new LineOfCells( [0, 0, 0, 1, 0, 0, 1, 2, 0, 1, 1, 0, 0, 0] );
+        return CellsArea.IsValid( row, out _, self, start, length, sixAllowed );
     }
 
     [TestCase( 0, 0, ExpectedResult = FigureType.ClosedTwo2, TestName = "[x, 0, 0, 1, 0] 0 - ClosedTwo2" )]
@@ -120,12 +52,9 @@ public class RowParserTests
     [TestCase( 9, 13, ExpectedResult = FigureType.ClosedThree2, TestName = "0 [1, 1, 0, 0, x] - ClosedThree2" )]
     public FigureType ParseFigureTest( int start, int cell )
     {
-        int[] row = [0, 0, 0, 1, 0, 0, 1, 2, 0, 1, 1, 0, 0, 0];
-        var end = start + 5;
-        var leftEdge = start == 0 ? -1 : row[start - 1];
-        var rightEdge = end == row.Length ? -1 : row[end];
-
-        return RowParser.ParseFigure( row, start, 5, leftEdge, rightEdge, cell, (int)Stone.White );
+        var row = new LineOfCells( [0, 0, 0, 1, 0, 0, 1, 2, 0, 1, 1, 0, 0, 0] );
+        var area = new CellsArea( row, Stone.White, start );
+        return RowParser.ParseFigure( area, cell );
     }
     
     [TestCase( 0, Stone.White, ExpectedResult = FigureType.ClosedTwo2 )]
@@ -144,9 +73,9 @@ public class RowParserTests
     [TestCase( 13, Stone.White, ExpectedResult = FigureType.ClosedThree2 )]
     public FigureType ParseRowTest( int cell, Stone self )
     {
-        int[] row = [0, 0, 0, 1, 0, 0, 1, 2, 0, 1, 1, 0, 0, 0];
+        var row = new LineOfCells( [0, 0, 0, 1, 0, 0, 1, 2, 0, 1, 1, 0, 0, 0], 14 );
         var figures = RowParser
-            .ParseRow( row, row.Length, self, false )
+            .ParseRow( row, self, false )
             .ToDictionary( f => f.Key, f => f.Value );
         return figures.GetValueOrDefault( cell, FigureType.None );
     }
