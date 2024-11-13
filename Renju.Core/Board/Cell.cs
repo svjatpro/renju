@@ -1,5 +1,16 @@
 ﻿namespace Renju.Core.Board;
-internal class Cell : ICell
+
+internal record Cell : ICell
 {
-    public Stone Stone { get; set; } = Stone.None;
+    private Stone InternalStone = Stone.None;
+    public Stone Stone
+    {
+        get => InternalStone;
+        set
+        {
+            if ( value != Stone.None )
+                throw new InvalidOperationException( "Cannot put a stone on a cell that already has a stone." );
+            InternalStone = value;
+        }
+    }
 }

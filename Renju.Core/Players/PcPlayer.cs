@@ -4,56 +4,45 @@ namespace Renju.Core.Players;
 
 public class PcPlayer( string name ) : Player( name )
 {
-    private Dictionary<Stone, BoardAnalyzer> BoardAnalyzers = null!;
-    private int[,,] BoardWeights = null!;
-
+    //private Dictionary<Stone, BoardAnalyzer> BoardAnalyzers = null!;
+    //private int[,,] BoardWeights = null!;
+    private Dictionary<Stone, BoardWeightsAnalyser> Weights = null!;
     private int Center;
-    private static readonly Dictionary<FigureType, int> FigureWeights = new()
-    {
-        { FigureType.None, 0 },
-        { FigureType.ClosedTwo3, 2 },
-        { FigureType.ClosedTwo2, 3 },
-        { FigureType.ClosedTwo1, 4 },
-        { FigureType.ClosedTwo, 5 },
-        { FigureType.OpenTwo, 15 },
-        { FigureType.ClosedThree2, 25 },
-        { FigureType.ClosedThree1, 27 },
-        { FigureType.ClosedThree, 29 },
-        { FigureType.OpenThree, 90 },
-        { FigureType.ClosedFour, 99 },
-        { FigureType.OpenFour, 400 },
-        { FigureType.SixOrMore, 1201 },
-        { FigureType.Five, 1201 }
-    };
-
+    
     public override void StartGame( Stone playersColor, IBoard board, IReferee referee )
     {
         base.StartGame( playersColor, board, referee );
-        
-        Center = (Board.Size / 2) - 1;
-        BoardWeights = new int[Board.Size, Board.Size, 2];
 
-        BoardAnalyzers = new()
+        Center = (Board.Size / 2) - 1;
+        Weights = new Dictionary<Stone, BoardWeightsAnalyser>
         {
-            {Stone.Black, new BoardAnalyzer(Board, Stone.Black)},
-            {Stone.White, new BoardAnalyzer(Board, Stone.White)}
+            { Stone.Black, new BoardWeightsAnalyser( new BoardFiguresAnalyser( Board, Stone.Black ) ) },
+            { Stone.White, new BoardWeightsAnalyser( new BoardFiguresAnalyser( Board, Stone.White ) ) },
         };
 
+        //BoardWeights = new int[Board.Size, Board.Size, 2];
 
-        foreach ( var boardAnalyzer in BoardAnalyzers.Values )
-        {
-            boardAnalyzer.MoveAnalysed += ( sender, e ) =>
-            {
-                var analyzer = (IBoardAnalyser) sender!;
-                var (_, _, affectedCells) = e;
-                foreach ( var cell in affectedCells )
-                {
-                    var cellFigures = analyzer[cell.col, cell.row];
-                    var weight = cellFigures.Values.Sum( f => FigureWeights[f] );
-                    BoardWeights[cell.col, cell.row, (int) analyzer.TargetStone - 1] = weight;
-                }
-            };
-        }
+        //BoardAnalyzers = new()
+        //{
+        //    {Stone.Black, new BoardAnalyzer(Board, Stone.Black)},
+        //    {Stone.White, new BoardAnalyzer(Board, Stone.White)}
+        //};
+
+
+        //foreach ( var boardAnalyzer in BoardAnalyzers.Values )
+        //{
+            //boardAnalyzer.MoveAnalysed += ( sender, e ) =>
+            //{
+            //    var analyser = (IBoardAnalyser) sender!;
+            //    var (_, _, affectedCells) = e;
+            //    foreach ( var cell in affectedCells )
+            //    {
+            //        var cellFigures = analyser[cell.col, cell.row];
+            //        var weight = cellFigures.Values.Sum( f => FigureWeights[f] );
+            //        BoardWeights[cell.col, cell.row, (int) analyser.TargetStone - 1] = weight;
+            //    }
+            //};
+        //}
     }
 
     public override bool TryProceedMove(out Move move)
@@ -67,7 +56,8 @@ public class PcPlayer( string name ) : Player( name )
         {
             for ( var row = 0; row < Board.Size; row++ )
             {
-                var cellWeight = BoardWeights[col, row, 0] + BoardWeights[col, row, 1];
+                //var cellWeight = BoardWeights[col, row, 0] + BoardWeights[col, row, 1];
+                var cellWeight = Weights.Values.Sum( w => w[col, row] );
                 if ( Board[col, row].Stone != Stone.None ||
                      cellWeight < bestWeight ||
                      !Referee.MoveAllowed( col, row, Stone ) )
@@ -90,6 +80,7 @@ public class PcPlayer( string name ) : Player( name )
 
     public override int GetDebug( int col, int row, Stone stone )
     {
-        return BoardWeights[col, row, (int) stone - 1];
+        return Weights[stone][col, row];
+        //return BoardWeights[col, row, (int) stone - 1];
     }
 }

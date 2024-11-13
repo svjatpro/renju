@@ -61,9 +61,8 @@ internal class RowParser
     /// </summary>
     internal static IDictionary<int, FigureType> ParseRow( LineOfCells row, Stone targetStone, bool sixAllowed )
     {
-        var areas = new List<CellsArea>();
-
         // define all possible areas for figures
+        var areas = new List<CellsArea>();
         for ( var i = 0; i <= row.Length - 5; i++)
         {
             if ( CellsArea.IsValid( row, out var area, targetStone, i, sixAllowed: sixAllowed ) )
@@ -72,7 +71,7 @@ internal class RowParser
             }
         }
 
-        // get all valid figures
+        // get all valid figures for all cells
         var figures = new List<(int cell, FigureType type)>();
         foreach ( var area in areas )
         {

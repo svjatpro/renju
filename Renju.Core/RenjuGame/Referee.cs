@@ -7,7 +7,7 @@ internal class Referee : IReferee
     #region Private Fields
 
     private readonly IBoard Board;
-    private readonly Dictionary<Stone, BoardAnalyzer> BoardAnalyzers;
+    private readonly Dictionary<Stone, BoardFiguresAnalyser> BoardAnalyzers;
 
     private void StoneMoved(object? sender, Move move)
     {
@@ -28,12 +28,11 @@ internal class Referee : IReferee
         GameOver?.Invoke( this, Winner );
     }
 
-    private void MoveAnalysed( object? sender, 
-        (Move move, 
-            Dictionary<FigureDirection, FigureType> figures,
-            List<(int col, int row)> affectedCells) e )
+    private void MoveAnalysed( 
+        object? sender, 
+        (Move move, Dictionary<FigureDirection, FigureType> figures, List<Coord> affectedCells) e )
     {
-        var analyzer = (IBoardAnalyser) sender!;
+        var analyzer = (BoardFiguresAnalyser) sender!;
         var (move, figures, _) = e;
         if ( move.Stone == analyzer.TargetStone && 
              figures.Any( f => 
@@ -53,10 +52,10 @@ internal class Referee : IReferee
         Board = board;
         Board.StoneMoved += StoneMoved;
 
-        BoardAnalyzers = new Dictionary<Stone, BoardAnalyzer>
+        BoardAnalyzers = new Dictionary<Stone, BoardFiguresAnalyser>
         {
-            { Stone.Black, new BoardAnalyzer( board, Stone.Black ) },
-            { Stone.White, new BoardAnalyzer( board, Stone.White ) },
+            { Stone.Black, new BoardFiguresAnalyser( board, Stone.Black ) },
+            { Stone.White, new BoardFiguresAnalyser( board, Stone.White ) },
         };
 
         foreach ( var analyzer in BoardAnalyzers.Values )
@@ -65,7 +64,7 @@ internal class Referee : IReferee
         }
     }
 
-    public bool MoveAllowed(int col, int row, Stone stone)
+    public bool MoveAllowed( int col, int row, Stone stone )
     {
         string? message = null;
 
@@ -107,7 +106,7 @@ internal class Referee : IReferee
         return message == null;
     }
 
-    public bool IsGameOver { get; private set; } = false;
+    public bool IsGameOver { get; private set; }
     public Stone Winner { get; private set; } = Stone.None;
 
     public event EventHandler<string>? ForbiddenMove;

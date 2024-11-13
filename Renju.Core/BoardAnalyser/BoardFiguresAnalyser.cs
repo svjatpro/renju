@@ -1,20 +1,9 @@
 ﻿namespace Renju.Core.BoardAnalyser;
 
-internal interface IBoardAnalyser
-{
-    Stone TargetStone { get; }
-    Dictionary<FigureDirection, FigureType> this[int col, int row] { get; }
-    event EventHandler<(
-        Move move,
-        Dictionary<FigureDirection, FigureType> figures,
-        List<(int col, int row)> affectedCells)> MoveAnalysed;
-}
-
-internal class BoardAnalyzer : IBoardAnalyser
+internal class BoardFiguresAnalyser
 {
     #region Private fields
-
-    private readonly IBoard Board;
+    
     private readonly Dictionary<FigureDirection, FigureType>[,] FiguresMap;
     private readonly Dictionary<FigureDirection, FigureType> OccupiedCell = new();
 
@@ -64,11 +53,11 @@ internal class BoardAnalyzer : IBoardAnalyser
         }
     }
 
-    private void ProcessMove( Move move, out List<(int col, int row)> affectedCells )
+    private List<Coord> ProcessMove( Move move )
     {
         var currentLine = new int[Board.Size];
         var lineMap = new Dictionary<int, (int col, int row)>();
-        affectedCells = [];
+        var affectedCells = new List<Coord>();
 
         // horizontal rows
         var row = move.Row;
@@ -76,7 +65,7 @@ internal class BoardAnalyzer : IBoardAnalyser
         {
             currentLine[c] = (int)Board[c, row].Stone;
             if( c != move.Col && Board[c, row].Stone == Stone.None )
-                affectedCells.Add( (c, row) );
+                affectedCells.Add( new Coord( c, row ) );
         }
         ProcessRow( new LineOfCells( currentLine, Board.Size ), FigureDirection.Horizontal, cell => (cell, row) );
 
@@ -86,7 +75,7 @@ internal class BoardAnalyzer : IBoardAnalyser
         {
             currentLine[r] = (int)Board[col, r].Stone;
             if ( r != move.Row && Board[col, r].Stone == Stone.None )
-                affectedCells.Add( (col, r) );
+                affectedCells.Add( new Coord( col, r ) );
         }
         ProcessRow( new LineOfCells( currentLine, Board.Size ), FigureDirection.Vertical, cell => (col, cell) );
 
@@ -99,7 +88,7 @@ internal class BoardAnalyzer : IBoardAnalyser
             currentLine[lineIndex] = (int)Board[c, r].Stone;
             lineMap[lineIndex] = ( c, r );
             if ( c != move.Col && r != move.Row && Board[c, r].Stone == Stone.None )
-                affectedCells.Add( (c, r) );
+                affectedCells.Add( new Coord( c, r ) );
         }
         ProcessRow( new LineOfCells( currentLine, lineIndex ), FigureDirection.DiagonalLeft, cell => lineMap[cell] );
 
@@ -112,14 +101,16 @@ internal class BoardAnalyzer : IBoardAnalyser
             currentLine[lineIndex] = (int)Board[c, r].Stone;
             lineMap[lineIndex] = ( c, r );
             if ( c != move.Col && r != move.Row && Board[c, r].Stone == Stone.None )
-                affectedCells.Add( (c, r) );
+                affectedCells.Add( new Coord( c, r ) );
         }
         ProcessRow( new LineOfCells( currentLine, lineIndex ), FigureDirection.DiagonalRight, cell => lineMap[cell] );
+
+        return affectedCells;
     }
 
     #endregion
 
-    public BoardAnalyzer( IBoard board, Stone targetStone )
+    public BoardFiguresAnalyser( IBoard board, Stone targetStone )
     {
         Board = board;
         TargetStone = targetStone;
@@ -129,7 +120,7 @@ internal class BoardAnalyzer : IBoardAnalyser
 
         Board.StoneMoved += ( _, move ) =>
         {
-            ProcessMove( move, out var affectedCells );
+            var affectedCells = ProcessMove( move );
 
             // notify about move analysed with figures
             //  which are not 'potential' anymore but 'actual' in this context
@@ -140,10 +131,13 @@ internal class BoardAnalyzer : IBoardAnalyser
         };
     }
 
+    public readonly IBoard Board;
     public Stone TargetStone { get; init; }
-    public Dictionary<FigureDirection, FigureType> this[int col, int row] => FiguresMap[col, row];
+    
+    public IReadOnlyDictionary<FigureDirection, FigureType> this[int col, int row] => FiguresMap[col, row];
+    
     public event EventHandler<(
         Move move,
         Dictionary<FigureDirection, FigureType> figures,
-        List<(int col, int row)> affectedCells)>? MoveAnalysed;
+        List<Coord> affectedCells)>? MoveAnalysed;
 }
