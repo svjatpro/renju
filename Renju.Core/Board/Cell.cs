@@ -8,7 +8,7 @@ internal record Cell : ICell
         get => InternalStone;
         set
         {
-            if ( value != Stone.None )
+            if ( InternalStone != Stone.None )
                 throw new InvalidOperationException( "Cannot put a stone on a cell that already has a stone." );
             InternalStone = value;
         }

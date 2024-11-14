@@ -2,42 +2,16 @@
 
 namespace Renju.CommandLine;
 
-internal class ConsolePlayer( int boardStartCol, int boardStartRow, string name ) : Player( name )
+internal class ConsolePlayer( string name, Func<(bool,Coord)> readCoordinates ) : Player( name )
 {
     public override bool TryProceedMove(out Move move)
     {
-        move = default!;
-        while (true)
+        if ( readCoordinates.Invoke() is not (true, var coord) )
         {
-            var key = Console.ReadKey(true);
-            switch (key.Key)
-            {
-                case ConsoleKey.UpArrow:
-                    if (Console.CursorTop - boardStartRow > 0)
-                        Console.SetCursorPosition(Console.CursorLeft, Console.CursorTop - 1);
-                    break;
-                case ConsoleKey.DownArrow:
-                    if (Console.CursorTop - boardStartRow < Board.Size - 1)
-                        Console.SetCursorPosition(Console.CursorLeft, Console.CursorTop + 1);
-                    break;
-                case ConsoleKey.LeftArrow:
-                    if (Console.CursorLeft - boardStartCol > 0)
-                        Console.SetCursorPosition(Console.CursorLeft - 2, Console.CursorTop);
-                    break;
-                case ConsoleKey.RightArrow:
-                    if (Console.CursorLeft - boardStartCol < Board.Size * 2 - 2)
-                        Console.SetCursorPosition(Console.CursorLeft + 2, Console.CursorTop);
-                    break;
-                case ConsoleKey.Spacebar:
-                    // put player's stone
-                    move = new Move((Console.CursorLeft - boardStartCol) / 2, Console.CursorTop - boardStartRow, Stone);
-                    return true;
-                default:
-                    OtherKeyPressed?.Invoke(this, key);
-                    return false;
-            }
+            move = default!;
+            return false;
         }
+        move = new Move( coord.Col, coord.Row, Stone );
+        return true;
     }
-
-    public event EventHandler<ConsoleKeyInfo>? OtherKeyPressed;
 }

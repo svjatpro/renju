@@ -1,7 +1,9 @@
 ﻿namespace Renju.CommandLine;
 
-internal record GameStyle
+internal record LayoutConfig
 {
+    public string Name { get; init; }
+    
     public ColorStyle Board { get; init; } = null!;
     public ColorStyle Info { get; init; } = null!;
     public ColorStyle Help { get; init; } = null!;
@@ -13,6 +15,10 @@ internal record GameStyle
     public ColorStyle PlayerWhite { get; init; } = null!;
     public ColorStyle StoneBlack { get; init; } = null!;
     public ColorStyle StoneWhite { get; init; } = null!;
+    
     public char StoneCharBlack { get; init; }
     public char StoneCharWhite { get; init; }
+    
+    public int CellHeight { get; set; }
+    public int CellWidth { get; set; }
 }
