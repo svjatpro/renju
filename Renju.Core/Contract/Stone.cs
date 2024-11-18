@@ -2,6 +2,6 @@
 public enum Stone
 {
     None = 0x00,
-    White = 0x01, // o
-    Black = 0x02, // x
+    Black = 0x01, // x
+    White = 0x02, // o
 }

@@ -5,7 +5,7 @@ internal class RowParser
     /// <summary>
     /// Get best figure for the empty cell in the area
     /// </summary>
-    internal static FigureType ParseFigure( CellsArea area, int cellIndex )
+    internal static FigureType DefineFigure( CellsArea area, int cellIndex )
     {
         var end = area.Start + area.Length;
         var selfStoneColor = (int)area.Stone;
@@ -49,6 +49,7 @@ internal class RowParser
             3 when holes == 0 => FigureType.ClosedThree,
             3 when holes == 1 => FigureType.ClosedThree1,
             3 when holes == 2 => FigureType.ClosedThree2,
+            4 when holes == 0 && leftSpace >0 && rightSpace > 0 => FigureType.OpenFour,
             4 => FigureType.ClosedFour,
             5 => FigureType.Five,
             > 5 => FigureType.SixOrMore,
@@ -59,7 +60,7 @@ internal class RowParser
     /// <summary>
     /// make a map of empty cells with the best potential figure for the cell
     /// </summary>
-    internal static IDictionary<int, FigureType> ParseRow( LineOfCells row, Stone targetStone, bool sixAllowed )
+    internal static IDictionary<int, FigureType> DefineBestFigures( LineOfCells row, Stone targetStone, bool sixAllowed )
     {
         // define all possible areas for figures
         var areas = new List<CellsArea>();
@@ -78,7 +79,7 @@ internal class RowParser
             for ( var i = area.Start; i < area.Start + area.Length; i++ )
             {
                 if ( row[i] != 0 ) continue;
-                var figure = ParseFigure( area, i );
+                var figure = DefineFigure( area, i );
                 if ( figure != FigureType.None ) figures.Add( (i, figure) );
             }
         }

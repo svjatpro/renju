@@ -18,7 +18,7 @@ public abstract class Player( string name ) : IPlayer
     }
 
     public abstract bool TryProceedMove( out Move move );
-    public virtual int GetDebug( int col, int row, Stone stone )
+    public virtual int GetDebug( int col, int row, StoneRole role )
     {
         return 0;
     }

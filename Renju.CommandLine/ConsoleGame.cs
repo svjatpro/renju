@@ -16,11 +16,8 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
     private const int BoardStartRow = 3;
     private const int StatusRow = 1;
     private const int MessageRow = 2;
-    private DebugMode Debug = DebugMode.None;
-    //private (int width, int height) WindowSize = default;
-    
-    private enum DebugMode { None = 0, Self = 1, Opponent = 2 }
-    
+    private StoneRole DebugRole = StoneRole.None;
+
     private void WriteInfo()
     {
         var infoStartRow = BoardStartRow + boardSize * Layout.CellHeight - Layout.CellHeight + 1;
@@ -93,7 +90,7 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
 
         for ( var col = 0; col < board.Size; ++col )
         {
-            Console.Write( '\u2502' );
+            Console.Write( Layout.GridChars[10] );
             if( col < board.Size - 1 ) Console.Write( new string( ' ', Layout.CellWidth - 1 ) );
         }
 
@@ -112,7 +109,6 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
                 BoardStartRow + cell.row * Layout.CellHeight );
         }
 
-        const char barChar = '\u2500'; // ─
         var cellCharLength = 1; // length of cell content
         switch ( board[cell.col, cell.row].Stone )
         {
@@ -127,31 +123,27 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
             case Stone.None:
                 var crossChar = cell.col switch
                 {
-                    0 when cell.row == 0 => '\u250c', // ┌
-                    0 when cell.row == board.Size - 1 => '\u2514', // └
-                    0 => '\u251c', // ├
-                    _ when cell.col == board.Size - 1 && cell.row == 0 => '\u2510', // ┐
-                    _ when cell.col == board.Size - 1 && cell.row == board.Size - 1 => '\u2518', // ┘
-                    _ when cell.col == board.Size - 1 => '\u2524', // ┤
-                    _ when cell.row == 0 => '\u252c', // ┬
-                    _ when cell.row == board.Size - 1 => '\u2534', // ┴
-                    _ => '\u253c' // ┼
+                    0 when cell.row == 0 => Layout.GridChars[0], // ┌
+                    0 when cell.row == board.Size - 1 => Layout.GridChars[15], // └
+                    0 => Layout.GridChars[5], // ├
+                    _ when cell.col == board.Size - 1 && cell.row == 0 => Layout.GridChars[4], // ┐
+                    _ when cell.col == board.Size - 1 && cell.row == board.Size - 1 => Layout.GridChars[19], // ┘
+                    _ when cell.col == board.Size - 1 => Layout.GridChars[9], // ┤
+                    _ when cell.row == 0 => Layout.GridChars[2], // ┬
+                    _ when cell.row == board.Size - 1 => Layout.GridChars[17], // ┴
+                    _ => Layout.GridChars[7] // ┼
                 };
-                if ( Debug != DebugMode.None )
+                if ( DebugRole != StoneRole.None )
                 {
-                    var debugStone = Debug == DebugMode.Self ? PcColor : playerColor;
-                    var debugWeight = Game.Players[PcColor]
-                        .GetDebug( cell.col, cell.row, debugStone )
-                        .ToString();
-                    var debug =
-                        debugWeight == "0" ? "" :
-                        ( debugWeight.Length > 2 ? $"{debugWeight[0]}~" : debugWeight );
-
-                    if ( debug.Length > 0 )
+                    var debugStone = DebugRole == StoneRole.Self ? PcColor : playerColor;
+                    var debugValue = Game.Players[PcColor].GetDebug( cell.col, cell.row, DebugRole );
+                    var debugText = debugValue == 0 ? "" : debugValue.ToString();
+                    if ( debugText.Length > 0 )
                     {
-                        Layout.Help.SetColor();
-                        Console.Write( debug );
-                        cellCharLength = debug.Length;
+                        if( debugStone == Stone.Black ) Layout.DebugBlack.SetColor();
+                        else Layout.DebugWhite.SetColor();
+                        Console.Write( debugText );
+                        cellCharLength = debugText.Length;
                     }
                     else
                     {
@@ -169,10 +161,10 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
                 break;
         }
 
-        if ( cellCharLength == 1 && cell.col < board.Size - 1 )
+        if ( cellCharLength < Layout.CellWidth && cell.col < board.Size - 1 )
         {
             Layout.Board.SetColor();
-            Console.Write( new string( barChar, Layout.CellWidth - cellCharLength ) );
+            Console.Write( new string( Layout.GridChars[1], Layout.CellWidth - cellCharLength ) );
         }
 
         if ( locateCursor )
@@ -196,6 +188,27 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
         Console.SetCursorPosition( current.x, current.y );
     }
 
+    private void SwitchLayout( string? name = null )
+    {
+        if ( name != null && Layout.Name == name ) return;
+        
+        var coord = new Coord(
+            ( Console.CursorLeft - BoardStartCol ) / Layout.CellWidth,
+            ( Console.CursorTop - BoardStartRow ) / Layout.CellHeight );
+        
+        var currentLayout = LayoutConfigs.IndexOf( Layout );
+        var newIndex = 
+            ( name != null && LayoutConfigs.Exists( l => l.Name == name )) ? 
+            LayoutConfigs.FindIndex( l => l.Name == name ) :
+            ( currentLayout + 1 >= LayoutConfigs.Count ? 0 : currentLayout + 1 );
+        Layout = LayoutConfigs[newIndex];
+        
+        WritLayout();
+        Console.SetCursorPosition(
+            BoardStartCol + coord.Col * Layout.CellWidth,
+            BoardStartRow + coord.Row * Layout.CellHeight );
+    }
+    
     private bool ReadPlayerMove( out Coord coord )
     {
         while ( true )
@@ -234,38 +247,35 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
     }
     private void ProcessPressedKey( ConsoleKeyInfo key )
     {
-        (int x, int y) current = (Console.CursorLeft, Console.CursorTop);
         switch ( key.Key )
         {
             case ConsoleKey.Escape:
                 BreakTheGame = true;
                 return;
             case ConsoleKey.D:
-                Debug = Debug switch
+                // switch debug role (player side)
+                SwitchLayout( "big" );
+                DebugRole = DebugRole switch
                 {
-                    DebugMode.None => DebugMode.Self,
-                    DebugMode.Self => DebugMode.Opponent,
-                    _ => DebugMode.None
+                    StoneRole.None => StoneRole.Self,
+                    StoneRole.Self => StoneRole.Opponent,
+                    _ => StoneRole.None
                 };
+                (int x, int y) current = (Console.CursorLeft, Console.CursorTop);
                 WriteBoard( Game.Board );
                 Console.SetCursorPosition( current.x, current.y );
                 return;
             case ConsoleKey.N:
                 // start new game
+                playerColor = playerColor.Opposite();
+                InitializeNewGame();
                 return;
             case ConsoleKey.H:
                 // show help instead of board
                 return;
-            case ConsoleKey.L:  // change layout
-                var coord = new Coord(
-                    ( current.x  - BoardStartCol ) / Layout.CellWidth,
-                    ( current.y  - BoardStartRow ) / Layout.CellHeight );
-                var currentLayout = LayoutConfigs.IndexOf( Layout );
-                Layout = LayoutConfigs[currentLayout + 1 >= LayoutConfigs.Count ? 0 : currentLayout + 1];
-                WritLayout();
-                Console.SetCursorPosition(
-                    BoardStartCol + coord.Col * Layout.CellWidth,
-                    BoardStartRow + coord.Row * Layout.CellHeight );
+            case ConsoleKey.L:  
+                // change layout
+                SwitchLayout();
                 return;
             //case ConsoleKey.F:
             //    if ( WindowSize == default )
@@ -281,39 +291,18 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
             //        WindowSize = default;
             //    }
             //    return;
+            //private (int width, int height) WindowSize = default;
         }
     }
 
     private void InitializeStyle()
     {
-        //const char barChar = '\u2500'; // ─
-        //0 when cell.row == 0 => '\u250c', // ┌
-        //0 when cell.row == board.Size - 1 => '\u2514', // └
-        //0 => '\u251c', // ├
-        //_ when cell.col == board.Size - 1 && cell.row == 0 => '\u2510', // ┐
-        //_ when cell.col == board.Size - 1 && cell.row == board.Size - 1 => '\u2518', // ┘
-        //_ when cell.col == board.Size - 1 => '\u2524', // ┤
-        //_ when cell.row == 0 => '\u252c', // ┬
-        //_ when cell.row == board.Size - 1 => '\u2534', // ┴
-        //_ => '\u253c' // ┼
-        
         // initialize styles
         LayoutConfigs =
         [
             new()
             {
                 Name = "default",
-                Board = new ColorStyle( ConsoleColor.DarkGray, ConsoleColor.Black ),
-                Info = new ColorStyle( ConsoleColor.DarkGray, ConsoleColor.Black ),
-                Help = new ColorStyle( ConsoleColor.Blue, ConsoleColor.Black ),
-                MessageError = new ColorStyle( ConsoleColor.Red, ConsoleColor.Black ),
-                PlayerBlack = new ColorStyle( ConsoleColor.DarkGray, ConsoleColor.Black ),
-                PlayerWhite = new ColorStyle( ConsoleColor.White, ConsoleColor.Black ),
-                MessageWin = new ColorStyle( ConsoleColor.Green, ConsoleColor.Black ),
-                MessageLoose = new ColorStyle( ConsoleColor.Yellow, ConsoleColor.Black ),
-                MessageDraw = new ColorStyle( ConsoleColor.Cyan, ConsoleColor.Black ),
-                StoneBlack = new ColorStyle( ConsoleColor.Yellow, ConsoleColor.Black ),
-                StoneWhite = new ColorStyle( ConsoleColor.White, ConsoleColor.Black ),
                 StoneCharBlack = 'x',
                 StoneCharWhite = 'o',
                 CellHeight = 1,
@@ -321,33 +310,23 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
             },
             new()
             {
-                Name = "BigCells",
-                Board = new ColorStyle( ConsoleColor.DarkGray, ConsoleColor.Black ),
-                Info = new ColorStyle( ConsoleColor.DarkGray, ConsoleColor.Black ),
-                Help = new ColorStyle( ConsoleColor.Blue, ConsoleColor.Black ),
-                MessageError = new ColorStyle( ConsoleColor.Red, ConsoleColor.Black ),
-                PlayerBlack = new ColorStyle( ConsoleColor.DarkGray, ConsoleColor.Black ),
-                PlayerWhite = new ColorStyle( ConsoleColor.White, ConsoleColor.Black ),
-                MessageWin = new ColorStyle( ConsoleColor.Green, ConsoleColor.Black ),
-                MessageLoose = new ColorStyle( ConsoleColor.Yellow, ConsoleColor.Black ),
-                MessageDraw = new ColorStyle( ConsoleColor.Cyan, ConsoleColor.Black ),
-                StoneBlack = new ColorStyle( ConsoleColor.Yellow, ConsoleColor.Black ),
-                StoneWhite = new ColorStyle( ConsoleColor.White, ConsoleColor.Black ),
-                StoneCharBlack = 'X',
-                StoneCharWhite = 'O',
+                Name = "big",
+                StoneCharBlack =  '\u26ab'
+                , // 'X',
+                StoneCharWhite = '\u26aa', //'O',
                 CellHeight = 2,
                 CellWidth = 4,
             }
         ];
-        Layout = LayoutConfigs[0];
-        
+
         //Console.Write( '\u26ab' ); // ⚫
         //Console.Write( '\u25cf' ); // ●
         //Console.Write( '\u26aa' ); // ⚪
         //Console.Write( '\u25cb' ); // ○   
+        Layout = LayoutConfigs[0];
     }
-    
-    private void Initialize()
+
+    private void InitializeNewGame()
     {
         // initialize players
         var pc = Player.PcPlayer( "Computer" );
@@ -374,10 +353,17 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
         Game.Board.StoneMoved += ( _, move ) =>
         {
             WriteMessage( " ", Layout.Info, MessageRow ); // clear message line
-            WriteCell( Game.Board, (move.Col, move.Row) );
+            if ( DebugRole == StoneRole.None )
+            {
+                WriteCell( Game.Board, (move.Col, move.Row) );
+            }
+            else
+            {
+                (int x, int y) current = (Console.CursorLeft, Console.CursorTop);
+                WriteBoard( Game.Board );
+                Console.SetCursorPosition( current.x, current.y );
+            }
         };
-
-        InitializeStyle();
         
         Console.SetCursorPosition( BoardStartCol + boardSize - 1, BoardStartRow + boardSize / 2 - 1 );
         WritLayout();
@@ -401,8 +387,9 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
     
     public void Run()
     {
-        Initialize();
-
+        InitializeStyle();
+        InitializeNewGame();
+        
         while ( true )
         {
             if ( Game.Referee.IsGameOver )

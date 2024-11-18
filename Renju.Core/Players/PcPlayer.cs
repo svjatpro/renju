@@ -1,4 +1,5 @@
 ﻿using Renju.Core.BoardAnalyser;
+using Renju.Core.Extensions;
 
 namespace Renju.Core.Players;
 
@@ -6,7 +7,7 @@ public class PcPlayer( string name ) : Player( name )
 {
     //private Dictionary<Stone, BoardAnalyzer> BoardAnalyzers = null!;
     //private int[,,] BoardWeights = null!;
-    private Dictionary<Stone, BoardWeightsAnalyser> Weights = null!;
+    private Dictionary<Stone, BoardWeightsAnalyser> WeightsAnalysers = null!;
     private int Center;
     
     public override void StartGame( Stone playersColor, IBoard board, IReferee referee )
@@ -14,7 +15,7 @@ public class PcPlayer( string name ) : Player( name )
         base.StartGame( playersColor, board, referee );
 
         Center = (Board.Size / 2) - 1;
-        Weights = new Dictionary<Stone, BoardWeightsAnalyser>
+        WeightsAnalysers = new Dictionary<Stone, BoardWeightsAnalyser>
         {
             { Stone.Black, new BoardWeightsAnalyser( new BoardFiguresAnalyser( Board, Stone.Black ) ) },
             { Stone.White, new BoardWeightsAnalyser( new BoardFiguresAnalyser( Board, Stone.White ) ) },
@@ -57,7 +58,7 @@ public class PcPlayer( string name ) : Player( name )
             for ( var row = 0; row < Board.Size; row++ )
             {
                 //var cellWeight = BoardWeights[col, row, 0] + BoardWeights[col, row, 1];
-                var cellWeight = Weights.Values.Sum( w => w[col, row] );
+                var cellWeight = WeightsAnalysers.Values.Sum( w => w[col, row] );
                 if ( Board[col, row].Stone != Stone.None ||
                      cellWeight < bestWeight ||
                      !Referee.MoveAllowed( col, row, Stone ) )
@@ -78,9 +79,9 @@ public class PcPlayer( string name ) : Player( name )
         return true;
     }
 
-    public override int GetDebug( int col, int row, Stone stone )
+    public override int GetDebug( int col, int row, StoneRole role )
     {
-        return Weights[stone][col, row];
-        //return BoardWeights[col, row, (int) stone - 1];
+        var stone = role == StoneRole.Self ? Stone : Stone.Opposite();
+        return WeightsAnalysers[stone][col, row];
     }
 }

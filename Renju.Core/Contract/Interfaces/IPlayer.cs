@@ -7,5 +7,5 @@ public interface IPlayer
 
     void StartGame( Stone playersColor, IBoard board, IReferee referee );
     bool TryProceedMove( out Move move );
-    int GetDebug( int col, int row, Stone stone );
+    int GetDebug( int col, int row, StoneRole role );
 }
