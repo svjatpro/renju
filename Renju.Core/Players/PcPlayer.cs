@@ -24,6 +24,7 @@ public class PcPlayer( string name ) : Player( name )
     {
         Thread.Sleep( 300 );
 
+        var opponent = Stone.Opposite();
         var bestWeight = 0;
         var centerCoef = 0;
         move = new Move( 0, 0, Stone );
@@ -31,13 +32,21 @@ public class PcPlayer( string name ) : Player( name )
         {
             for ( var row = 0; row < Board.Size; row++ )
             {
-                var cellWeight = WeightsAnalysers.Values.Sum( w => w[col, row] );
                 if ( Board[col, row].Stone != Stone.None ||
-                     cellWeight < bestWeight ||
                      !Referee.MoveAllowed( col, row, Stone ) )
                 {
                     continue;
                 }
+
+                // weight of self move
+                var cellWeight = WeightsAnalysers[Stone][col, row];
+
+                // consider weight of an opponent's move
+                if ( Referee.MoveAllowed( col, row, opponent, ignoreSequence: true ) )
+                {
+                    cellWeight += WeightsAnalysers[Stone.Opposite()][col, row];
+                }
+                if (cellWeight < bestWeight ) continue;
 
                 var coef = Math.Abs( col - Center ) + Math.Abs( row - Center );
                 if ( cellWeight > bestWeight || (
@@ -49,7 +58,7 @@ public class PcPlayer( string name ) : Player( name )
                 }
 
                 // todo: remove temporary code
-                return true;
+                //return true;
             }
         }
         return true;

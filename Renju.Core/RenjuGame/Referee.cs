@@ -1,5 +1,4 @@
 ﻿using Renju.Core.BoardAnalyser;
-using System.ComponentModel;
 
 namespace Renju.Core.RenjuGame;
 
@@ -65,7 +64,7 @@ internal class Referee : IReferee
         }
     }
 
-    public bool MoveAllowed( int col, int row, Stone stone )
+    public bool MoveAllowed( int col, int row, Stone stone, bool ignoreSequence = false )
     {
         string? message = null;
 
@@ -82,7 +81,7 @@ internal class Referee : IReferee
             message = "Cell is not empty.";
 
         // right player's (by stone color) turn
-        else if (Board.LastMove?.Stone == stone)
+        else if (!ignoreSequence && Board.LastMove?.Stone == stone)
             message = "It's not your turn.";
 
         else if ( stone == Stone.Black &&

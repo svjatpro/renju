@@ -2,7 +2,7 @@
 
 public interface IReferee
 {
-    bool MoveAllowed(int col, int row, Stone stone);
+    bool MoveAllowed(int col, int row, Stone stone, bool ignoreSequence = false);
 
     bool IsGameOver { get; }
     Stone Winner { get; }
