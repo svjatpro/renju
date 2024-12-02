@@ -203,12 +203,29 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
             ( currentLayout + 1 >= LayoutConfigs.Count ? 0 : currentLayout + 1 );
         Layout = LayoutConfigs[newIndex];
         
-        WritLayout();
+        WriteLayout();
         Console.SetCursorPosition(
             BoardStartCol + coord.Col * Layout.CellWidth,
             BoardStartRow + coord.Row * Layout.CellHeight );
     }
-    
+
+    private bool ReadDebugPlayerMove()
+    {
+        while ( DebugRole != StoneRole.None )
+        {
+            var key = Console.ReadKey( true );
+            switch ( key.Key )
+            {
+                case ConsoleKey.Spacebar:
+                    return true;
+                default:
+                    ProcessPressedKey( key );
+                    return false;
+            }
+        }
+        return true;
+    }
+
     private bool ReadPlayerMove( out Coord coord )
     {
         while ( true )
@@ -311,9 +328,10 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
             new()
             {
                 Name = "big",
-                StoneCharBlack =  '\u26ab'
-                , // 'X',
-                StoneCharWhite = '\u26aa', //'O',
+                //StoneCharBlack =  '\u26ab'
+                StoneCharBlack = 'X',
+                //StoneCharWhite = '\u26aa',
+                StoneCharWhite = 'O',
                 CellHeight = 2,
                 CellWidth = 4,
             }
@@ -329,7 +347,7 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
     private void InitializeNewGame()
     {
         // initialize players
-        var pc = Player.PcPlayer( "Computer" );
+        var pc = new ConsolePlayerWrapper( Player.PcPlayer( "Computer" ), ReadDebugPlayerMove );
         var human = new ConsolePlayer( "Human", () => (ReadPlayerMove( out var coord ), coord) );
 
         // initialize game
@@ -366,10 +384,10 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
         };
         
         Console.SetCursorPosition( BoardStartCol + boardSize - 1, BoardStartRow + boardSize / 2 - 1 );
-        WritLayout();
+        WriteLayout();
     }
 
-    private void WritLayout()
+    private void WriteLayout()
     {
         (int x, int y) current = (Console.CursorLeft, Console.CursorTop);
         

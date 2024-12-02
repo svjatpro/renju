@@ -34,7 +34,7 @@ internal record CellsArea
     public static bool IsValid( 
         LineOfCells line, 
         out CellsArea? area,
-        Stone targetStone, int start, int length = 5, bool sixAllowed = false )
+        Stone targetStone, int start, int length = 5 )
     {
         area = null;
         var self = (int)targetStone;
@@ -48,9 +48,6 @@ internal record CellsArea
         // opponentStoneColor stone
         var end = start + length;
         for ( var i = start; i < end; i++ ) if ( line[i] == self.Opposite() ) return false;
-
-        // six
-        if ( !sixAllowed && ( l == self || r == self) ) return false;
 
         area = new CellsArea( line, targetStone, start, length, l, r );
         return true;

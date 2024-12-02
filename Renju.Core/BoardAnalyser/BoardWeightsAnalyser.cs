@@ -18,10 +18,10 @@ internal class BoardWeightsAnalyser
         { FigureType.OpenThree, 90 },
         { FigureType.ClosedFour, 99 },
         { FigureType.OpenFour, 400 },
-        { FigureType.SixOrMore, 1201 },
-        { FigureType.Five, 1201 }
+        { FigureType.Five, 1202 },
+        { FigureType.SixOrMore, 1201 }
     };
-    
+
     private int[,] Weights;
 
     #endregion

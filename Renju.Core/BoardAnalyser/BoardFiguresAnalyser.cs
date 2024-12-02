@@ -38,7 +38,7 @@ internal class BoardFiguresAnalyser
         FigureDirection direction,
         Func<int,(int col, int row)> cellResolver)
     {
-        var rowFigures = RowParser.DefineBestFigures( row, TargetStone, TargetStone == Stone.White );
+        var rowFigures = RowParser.DefineBestFigures( row, TargetStone );
         for ( var i = 0; i < row.Length; i++ )
         {
             var cell = cellResolver( i );

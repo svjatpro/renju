@@ -1,4 +1,5 @@
 ﻿using Renju.Core.BoardAnalyser;
+using System.ComponentModel;
 
 namespace Renju.Core.RenjuGame;
 
@@ -84,20 +85,33 @@ internal class Referee : IReferee
         else if (Board.LastMove?.Stone == stone)
             message = "It's not your turn.";
 
+        else if ( stone == Stone.Black &&
+                  BoardAnalyzers[stone][col, row].Any( f => f.Value == FigureType.Five ) )
+        {
+            // If Black makes a forbidden move, then the game will be won for White.
+            // One exception is that, if Black makes a forbidden move and five in a row at the same time,
+            // it will still be considered a win for Black.
+            return message == null;
+        }
+
+        // ---------------------------------------
         // 3x3
-        else if ( stone == Stone.Black && BoardAnalyzers[stone][col, row].Count( f => f.Value == FigureType.OpenThree ) > 1 )
+        else if ( stone == Stone.Black && 
+                  BoardAnalyzers[stone][col, row].Count( f => f.Value == FigureType.OpenThree ) > 1 )
         {
             message = "3x3 rule violation.";
         }
 
         // 4x4
-        else if ( stone == Stone.Black && BoardAnalyzers[stone][col, row].Count( f => f.Value == FigureType.OpenFour ) > 1 )
+        else if ( stone == Stone.Black && 
+                  BoardAnalyzers[stone][col, row].Count( f => f.Value == FigureType.OpenFour ) > 1 )
         {
             message = "4x4 rule violation.";
         }
 
         // 6+
-        else if ( stone == Stone.Black && BoardAnalyzers[stone][col, row].Any( f => f.Value == FigureType.SixOrMore ) )
+        else if ( stone == Stone.Black && 
+                  BoardAnalyzers[stone][col, row].Any( f => f.Value == FigureType.SixOrMore ) )
         {
             message = "6+ rule violation.";
         }

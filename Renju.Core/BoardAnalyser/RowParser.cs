@@ -8,14 +8,14 @@ internal class RowParser
     internal static FigureType DefineFigure( CellsArea area, int cellIndex )
     {
         var end = area.Start + area.Length;
-        var selfStoneColor = (int)area.Stone;
+        var selfStone = (int)area.Stone;
         var stones = 0;
         var holes = 0;
         var leftSpace = area.LeftEdge == 0 ? 1 : 0;
         var rightSpace = area.RightEdge == 0 ? 1 : 0;
         for ( int i = area.Start, h = 0, r = 0; i < end; i++ )
         {
-            if ( i == cellIndex || area.Line[i] == selfStoneColor ) stones++;
+            if ( i == cellIndex || area.Line[i] == selfStone ) stones++;
 
             // calculate holes inside the figure
             if ( area.Line[i] == 0 && i != cellIndex )
@@ -23,7 +23,7 @@ internal class RowParser
                 if ( stones > 0 ) h++;
                 r++; // right space not verified
             }
-            else if ( area.Line[i] == selfStoneColor || i == cellIndex )
+            else if ( area.Line[i] == selfStone || i == cellIndex )
             {
                 if ( h > 0 )
                 {
@@ -51,6 +51,7 @@ internal class RowParser
             3 when holes == 2 => FigureType.ClosedThree2,
             4 when holes == 0 && leftSpace >0 && rightSpace > 0 => FigureType.OpenFour,
             4 => FigureType.ClosedFour,
+            5 when area.LeftEdge == selfStone || area.RightEdge == selfStone => FigureType.SixOrMore,
             5 => FigureType.Five,
             > 5 => FigureType.SixOrMore,
             _ => FigureType.None
@@ -60,13 +61,13 @@ internal class RowParser
     /// <summary>
     /// make a map of empty cells with the best potential figure for the cell
     /// </summary>
-    internal static IDictionary<int, FigureType> DefineBestFigures( LineOfCells row, Stone targetStone, bool sixAllowed )
+    internal static IDictionary<int, FigureType> DefineBestFigures( LineOfCells row, Stone targetStone )
     {
         // define all possible areas for figures
         var areas = new List<CellsArea>();
         for ( var i = 0; i <= row.Length - 5; i++)
         {
-            if ( CellsArea.IsValid( row, out var area, targetStone, i, sixAllowed: sixAllowed ) )
+            if ( CellsArea.IsValid( row, out var area, targetStone, i ) )
             {
                 areas.Add( area! );
             }
