@@ -57,7 +57,7 @@ public class PcPlayer( string name ) : Player( name )
                     centerCoef = coef;
                 }
 
-                // todo: remove temporary code
+                // todo: remove temporary code - debug near-win combinations
                 //return true;
             }
         }
