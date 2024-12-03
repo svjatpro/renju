@@ -3,6 +3,7 @@ using Renju.Core.Extensions;
 
 namespace Renju.Core.Players;
 
+
 public class PcPlayer( string name ) : Player( name )
 {
     private Dictionary<Stone, BoardWeightsAnalyser> WeightsAnalysers = null!;
