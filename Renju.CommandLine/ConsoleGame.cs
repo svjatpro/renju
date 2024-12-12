@@ -1,7 +1,6 @@
 ﻿using Renju.Core;
 using Renju.Core.Extensions;
 using Renju.Core.RenjuGame;
-using System.Drawing;
 
 namespace Renju.CommandLine;
 
@@ -129,26 +128,26 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
                     _ when cell.Row == board.Size - 1 => Layout.GridChars[17], // ┴
                     _ => Layout.GridChars[7] // ┼
                 };
-                if ( DebugRole != StoneRole.None )
-                {
-                    var debugStone = DebugRole == StoneRole.Self ? PcColor : playerColor;
-                    var debugValue = Game.Players[PcColor].GetDebug( cell.Col, cell.Row, DebugRole );
-                    var debugText = debugValue == 0 ? "" : debugValue.ToString();
-                    if ( debugText.Length > 0 )
-                    {
-                        if( debugStone == Stone.Black ) Layout.DebugBlack.SetColor();
-                        else Layout.DebugWhite.SetColor();
-                        Console.Write( debugText );
-                        cellCharLength = debugText.Length;
-                    }
-                    else
-                    {
-                        Layout.Board.SetColor();
-                        Console.Write( crossChar );
-                        cellCharLength = 1;
-                    }
-                }
-                else
+                //if ( DebugRole != StoneRole.None )
+                //{
+                //    var debugStone = DebugRole == StoneRole.Self ? PcColor : playerColor;
+                //    var debugValue = Game.Players[PcColor].GetDebug( cell.Col, cell.Row, DebugRole );
+                //    var debugText = debugValue == 0 ? "" : debugValue.ToString();
+                //    if ( debugText.Length > 0 )
+                //    {
+                //        if( debugStone == Stone.Black ) Layout.DebugBlack.SetColor();
+                //        else Layout.DebugWhite.SetColor();
+                //        Console.Write( debugText );
+                //        cellCharLength = debugText.Length;
+                //    }
+                //    else
+                //    {
+                //        Layout.Board.SetColor();
+                //        Console.Write( crossChar );
+                //        cellCharLength = 1;
+                //    }
+                //}
+                //else
                 {
                     Layout.Board.SetColor();
                     Console.Write( crossChar );

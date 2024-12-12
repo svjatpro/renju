@@ -18,8 +18,8 @@ internal class ConsolePlayerWrapper( IPlayer player, Func<bool> readKeys ) : Pla
         player.StartGame( playersColor, board, referee );
     }
 
-    public override int GetDebug( int col, int row, StoneRole role )
-    {
-        return player.GetDebug( col, row, role );
-    }
+    //public override int GetDebug( int col, int row, StoneRole role )
+    //{
+    //    return player.GetDebug( col, row, role );
+    //}
 }

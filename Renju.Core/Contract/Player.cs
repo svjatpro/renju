@@ -18,10 +18,10 @@ public abstract class Player( string name ) : IPlayer
     }
 
     public abstract bool TryProceedMove( out Move move );
-    public virtual int GetDebug( int col, int row, StoneRole role )
-    {
-        return 0;
-    }
+    //public virtual int GetDebug( int col, int row, StoneRole role )
+    //{
+    //    return 0;
+    //}
 
     public static IPlayer PcPlayer( string name = "PC" ) => new PcPlayer( name );
 }
