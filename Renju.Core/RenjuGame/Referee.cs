@@ -119,6 +119,11 @@ internal class Referee : IReferee
         return message == null;
     }
 
+    public IReferee Clone( IBoard? board = null )
+    {
+        return new Referee( board ?? Board.Clone() );
+    }
+
     public bool IsGameOver { get; private set; }
     public Stone Winner { get; private set; } = Stone.None;
 

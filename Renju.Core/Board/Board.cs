@@ -4,7 +4,7 @@ internal class Board : IBoard
 {
     #region Private Fields
 
-    private Cell[,] Cells;
+    private readonly Cell[,] Cells;
 
     public Board(int size)
     {
@@ -30,17 +30,33 @@ internal class Board : IBoard
         }
     }
 
-     public Move? LastMove { get; private set; }
+    public Move? LastMove { get; private set; }
 
-    public void PutStone(int col, int row, Stone stone)
+    public void PutStone( Move move )
+    {
+        PutStone( move.Col, move.Row, move.Stone );
+    }
+    public void PutStone( int col, int row, Stone stone )
     {
         Cells[col, row].Stone = stone;
 
-        LastMove = new Move(col, row, stone, LastMove?.SeqNumber ?? 0);
+        LastMove = new Move( col, row, stone, LastMove?.SeqNumber ?? 0 );
 
-        StoneMoved?.Invoke(this, LastMove);
+        StoneMoved?.Invoke( this, LastMove );
+    }
 
-        // TODO: add move index
+    public IBoard Clone()
+    {
+        var board = new Board( Size );
+        for ( var col = 0; col < Size; col++ )
+            for ( var row = 0; row < Size; row++ )
+                board.Cells[col, row].Stone = Cells[col, row].Stone;
+        return board;
+    }
+
+    public void Dispose()
+    {
+        StoneMoved = null;
     }
 
     public event EventHandler<Move>? StoneMoved;

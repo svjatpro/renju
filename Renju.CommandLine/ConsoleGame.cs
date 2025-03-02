@@ -360,7 +360,7 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
     private void InitializeNewGame()
     {
         // initialize players
-        var pc = new ConsolePlayerWrapper( Player.PcPlayer( "Computer" ), ReadDebugPlayerMove );
+        var pc = new PlayerDebugWrapper( Player.PcPlayer( "Computer" ), ReadDebugPlayerMove );
         var human = new ConsolePlayer( "Human", () => (ReadPlayerMove( out var coord ), coord) );
 
         // initialize game

@@ -1,11 +1,18 @@
 ﻿namespace Renju.Core.BoardAnalyser;
 
-internal class BoardFiguresAnalyser
+internal class BoardFiguresAnalyser : IDisposable
 {
     #region Private fields
     
     private readonly Dictionary<FigureDirection, FigureType>[,] FiguresMap;
-    private readonly Dictionary<FigureDirection, FigureType> OccupiedCell = new();
+    private static readonly Dictionary<FigureDirection, FigureType> OccupiedCell =
+        new()
+        {
+            { FigureDirection.Horizontal, FigureType.None },
+            { FigureDirection.Vertical, FigureType.None },
+            { FigureDirection.DiagonalLeft, FigureType.None },
+            { FigureDirection.DiagonalRight, FigureType.None },
+        };
 
     #endregion
 
@@ -13,11 +20,6 @@ internal class BoardFiguresAnalyser
 
     private void InitializeFiguresMap()
     {
-        OccupiedCell[FigureDirection.Horizontal] = FigureType.None;
-        OccupiedCell[FigureDirection.Vertical] = FigureType.None;
-        OccupiedCell[FigureDirection.DiagonalLeft] = FigureType.None;
-        OccupiedCell[FigureDirection.DiagonalRight] = FigureType.None;
-
         for ( var col = 0; col < Board.Size; col++ )
         {
             for ( var row = 0; row < Board.Size; row++ )
@@ -110,13 +112,23 @@ internal class BoardFiguresAnalyser
 
     #endregion
 
-    public BoardFiguresAnalyser( IBoard board, Stone targetStone )
+    public BoardFiguresAnalyser( 
+        IBoard board, 
+        Stone targetStone, 
+        Dictionary<FigureDirection, FigureType>[,]? figuresMap = null )
     {
         Board = board;
         TargetStone = targetStone;
 
-        FiguresMap = new Dictionary<FigureDirection, FigureType>[Board.Size, Board.Size];
-        InitializeFiguresMap();
+        if ( figuresMap == null )
+        {
+            FiguresMap = new Dictionary<FigureDirection, FigureType>[Board.Size, Board.Size];
+            InitializeFiguresMap();
+        }
+        else
+        {
+            FiguresMap = figuresMap;
+        }
 
         Board.StoneMoved += ( _, move ) =>
         {
@@ -125,7 +137,7 @@ internal class BoardFiguresAnalyser
             // notify about move analysed with figures
             //  which are not 'potential' anymore but 'actual' in this context
             //  as the move is already processed for the cell
-            // be careful - clearing the figures map for the cell is done must be done after the event
+            // be careful - clearing the figures map for the cell must be done after the event
             MoveAnalysed?.Invoke( this, (move, FiguresMap[move.Col, move.Row], affectedCells) );
             FiguresMap[move.Col, move.Row] = OccupiedCell;
         };
@@ -140,4 +152,21 @@ internal class BoardFiguresAnalyser
         Move move,
         Dictionary<FigureDirection, FigureType> figures,
         List<Coord> affectedCells)>? MoveAnalysed;
+
+    public BoardFiguresAnalyser Clone( IBoard board )
+    {
+        var figuresMap = new Dictionary<FigureDirection, FigureType>[board.Size, board.Size];
+        for ( var col = 0; col < board.Size; col++ )
+            for ( var row = 0; row < board.Size; row++ )
+                figuresMap[col, row] = FiguresMap[col, row];
+
+        return new BoardFiguresAnalyser( board, TargetStone, figuresMap );
+    }
+
+    public void Dispose()
+    {
+        for ( var col = 0; col < Board.Size; col++ )
+            for ( var row = 0; row < Board.Size; row++ )
+                FiguresMap[col, row].Clear();
+    }
 }

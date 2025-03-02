@@ -3,6 +3,7 @@
 public interface IReferee
 {
     bool MoveAllowed(int col, int row, Stone stone, bool ignoreSequence = false);
+    IReferee Clone( IBoard? board = null );
 
     bool IsGameOver { get; }
     Stone Winner { get; }

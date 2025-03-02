@@ -1,6 +1,6 @@
 ﻿namespace Renju.Core;
 
-public interface IBoard
+public interface IBoard : IDisposable
 {
     int Size { get; }
 
@@ -8,8 +8,10 @@ public interface IBoard
 
     Move? LastMove { get; }
 
-    // todo: remove from interface
-    void PutStone(int col, int row, Stone stone);
+    // todo: remove from interface    
+    void PutStone( Move move );
+    void PutStone( int col, int row, Stone stone );
+    IBoard Clone();
 
-    event EventHandler<Move> StoneMoved;
+    event EventHandler<Move> StoneMoved;    
 }
