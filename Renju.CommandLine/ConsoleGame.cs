@@ -182,6 +182,18 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
         // restore cursor position
         Console.SetCursorPosition( current.x, current.y );
     }
+    private void WriteGameOverMessage()
+    {
+        var winner = Game.Referee.Winner;
+        if ( !Game.Referee.IsGameOver )
+            return;
+        else if ( winner == playerColor )
+            WriteMessage( "You win!", Layout.MessageWin, StatusRow );
+        else if ( winner == PcColor )
+            WriteMessage( "You lose!", Layout.MessageLoose, StatusRow );
+        else
+            WriteMessage( "Draw!", Layout.MessageDraw, StatusRow );
+    }
 
     private void SetCursor( Coord? coord = null )
     {
@@ -271,6 +283,7 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
                 return;
             case ConsoleKey.D:
                 // switch debug role (player side)
+                return; // at the moment debug mode could break the app, and it needs to be redesigned
                 SwitchLayout( "big" );
                 DebugRole = DebugRole switch
                 {
@@ -290,7 +303,7 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
             case ConsoleKey.H:
                 // show help instead of board
                 return;
-            case ConsoleKey.L:  
+            case ConsoleKey.L:
                 // change layout
                 SwitchLayout();
                 return;
@@ -358,12 +371,7 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
         // initialize referee
         Game.Referee.GameOver += ( _, winner ) =>
         {
-            if ( winner == playerColor )
-                WriteMessage( "You win!", Layout.MessageWin, StatusRow );
-            else if ( winner == PcColor )
-                WriteMessage( "You lose!", Layout.MessageLoose, StatusRow );
-            else
-                WriteMessage( "Draw!", Layout.MessageDraw, StatusRow );
+            WriteGameOverMessage();
         };
         Game.Referee.ForbiddenMove += ( _, message ) => WriteMessage( message, Layout.MessageError );
 
@@ -384,7 +392,6 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
         };
 
         SetCursor();
-        //Console.SetCursorPosition( BoardStartCol + boardSize - 1, BoardStartRow + boardSize / 2 - 1 );
         WriteLayout();
     }
 
@@ -414,6 +421,7 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
             if ( Game.Referee.IsGameOver )
             {
                 ProcessPressedKey( Console.ReadKey( true ) );
+                WriteGameOverMessage();
             }
             else
             {
