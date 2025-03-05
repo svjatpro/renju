@@ -7,7 +7,7 @@ public class BoardAnalyserPlain : IBoardAnalyser
     public BoardAnalyserPlain( Stone stone, IBoard board, IReferee referee )
     {
         // use general board and referee, so it will be updated dynamically
-        CurrentGameState = new MovePoint( stone, board, referee );
+        CurrentGameState = new MovePoint( stone, Stone.Black, board, referee );
     }
 
     public bool TryProceedNextMove( out Move move )
