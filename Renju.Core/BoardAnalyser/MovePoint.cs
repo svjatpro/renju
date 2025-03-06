@@ -41,6 +41,38 @@ internal class MovePoint : IDisposable
         NodesGrid = new MovePoint?[Board.Size, Board.Size];
     }
 
+    public string[] DebugNodes
+    {
+        get
+        {
+            var debugNodes = new List<string>();
+            TrackNodes( this, string.Empty, debugNodes );
+            return debugNodes.ToArray();
+
+            void TrackNodes( MovePoint point, string currentPath, List<string> nodes )
+            {
+                var anyNodes = false;
+                for ( var col = 0; col < point.NodesGrid.GetLength( 0 ); col++ )
+                {
+                    for ( var row = 0; row < point.NodesGrid.GetLength( 1 ); row++ )
+                    {
+                        if ( point.NodesGrid[col, row] != null )
+                        {
+                            anyNodes = true;
+                            var stone = point.NextStone == Stone.Black ? "x" : "o";
+                            var node = $" => {stone}({col}, {row})";
+                            TrackNodes( point.NodesGrid[col, row]!, currentPath + node, nodes );
+                        }
+                    }
+                }
+                if ( !anyNodes )
+                {
+                    nodes.Add( currentPath );
+                }
+            }            
+        }
+    }
+
     public bool GetBestMove( out Move move )
     {
         var opponent = SelfStone.Opposite();
@@ -81,15 +113,14 @@ internal class MovePoint : IDisposable
     }
     public IList<(int weight, Move move, MovePoint? point)> GetBestMoves()
     {
-        var opponent = SelfStone.Opposite();
-        var bestWeight = 0;
+        var opponent = NextStone.Opposite();
         var moves = new List<(int weight, Move move, MovePoint? point)>();
         for ( var col = 0; col < Board.Size; col++ )
         {
             for ( var row = 0; row < Board.Size; row++ )
             {
                 if ( Board[col, row].Stone != Stone.None ||
-                     !Referee.MoveAllowed( col, row, SelfStone ) )
+                     !Referee.MoveAllowed( col, row, NextStone ) )
                 {
                     continue;
                 }

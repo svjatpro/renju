@@ -42,20 +42,24 @@ public class BoardAnalyserGraph : IBoardAnalyser
         // todo: make it configurable - delay is not needed for AI vs AI games
         Thread.Sleep( 300 );
 
-        ProcessMove( CurrentGamePoint );
+        CurrentGamePoint.GetBestMove( out move );
 
+        var nextPoint = CurrentGamePoint.NodesGrid[move.Col, move.Row];
+        if ( nextPoint == null )
+        {
+            nextPoint = CurrentGamePoint.CloneFor( move );
+            CurrentGamePoint.NodesGrid[move.Col, move.Row] = nextPoint;
+        }
+        for ( var i = 0; i < 5; i++ )
+        {
+            ProcessMove( nextPoint );
+        }
 
-        //foreach ( var m in moves.Where(m => m.point == null ).Take(10) )
-        //{
-        //    var nextPoint = CurrentGamePoint.CloneFor( m.move );
-        //    CurrentGamePoint.NodesGrid[m.move.Col, m.move.Row] = nextPoint;
-        //}
-
-        return CurrentGamePoint.GetBestMove( out move );
+        return true;
 
         void ProcessMove( MovePoint move )
         {
-            var moves = CurrentGamePoint
+            var moves = move
                 .GetBestMoves()
                 .OrderByDescending( m => m.weight )
                 .ToList();
@@ -69,16 +73,10 @@ public class BoardAnalyserGraph : IBoardAnalyser
             var bestMove = moves.FirstOrDefault( m => m.point == null );
             if ( bestMove != default )
             {
-                var nextPoint = CurrentGamePoint.CloneFor( bestMove.move );
-                CurrentGamePoint.NodesGrid[bestMove.move.Col, bestMove.move.Row] = nextPoint;
+                var nextPoint = move.CloneFor( bestMove.move );
+                move.NodesGrid[bestMove.move.Col, bestMove.move.Row] = nextPoint;
             }
-
-            //foreach ( var m in moves.Where( m => m.point != null ) )
             // probability ??
-            // 
-
-            //var nextPoint = CurrentGamePoint.NodesGrid[m.move.Col, m.move.Row];
-            //CurrentGamePoint.NodesGrid[m.move.Col, m.move.Row] = nextPoint;
         }    
     }
 }
