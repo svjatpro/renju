@@ -73,8 +73,8 @@ public class BoardAnalyserGraph : IBoardAnalyser
             var bestMove = moves.FirstOrDefault( m => m.point == null );
             if ( bestMove != default )
             {
-                var nextPoint = move.CloneFor( bestMove.move );
-                move.NodesGrid[bestMove.move.Col, bestMove.move.Row] = nextPoint;
+                var next = move.CloneFor( bestMove.move );
+                move.NodesGrid[bestMove.move.Col, bestMove.move.Row] = next;
             }
             // probability ??
         }    

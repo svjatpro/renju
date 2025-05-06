@@ -11,9 +11,12 @@ internal class MovePoint : IDisposable
     private readonly Stone NextStone;
     private readonly int Center;
     private readonly Dictionary<Stone, BoardWeightsAnalyser> WeightsAnalysers;
+    
+    private int Weight;
+    private decimal NormalizedWeight;
 
     public readonly MovePoint?[,] NodesGrid;
-
+    
     public MovePoint( 
         Stone selfStone, Stone nextStone,
         IBoard board, IReferee referee,
@@ -39,6 +42,8 @@ internal class MovePoint : IDisposable
         };
 
         NodesGrid = new MovePoint?[Board.Size, Board.Size];
+
+        
     }
 
     public string[] DebugNodes
@@ -151,6 +156,10 @@ internal class MovePoint : IDisposable
             SelfStone, move.Stone.Opposite(), board, referee,
             WeightsAnalysers[Stone.Black].Clone( board ),
             WeightsAnalysers[Stone.White].Clone( board ) );
+
+        var w = WeightsAnalysers[move.Stone][move.Col, move.Row] +
+                WeightsAnalysers[move.Stone.Opposite()][move.Col, move.Row];
+        var n = Math.Round((decimal)w / BoardWeightsAnalyser.FigureWeights[FigureType.Five], 2);
 
         board.PutStone( move );
         return next;

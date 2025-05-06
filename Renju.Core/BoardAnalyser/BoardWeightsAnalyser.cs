@@ -4,7 +4,7 @@ internal class BoardWeightsAnalyser : IDisposable
 {
     #region Private fields
 
-    private static readonly Dictionary<FigureType, int> FigureWeights = new()
+    public static readonly Dictionary<FigureType, int> FigureWeights = new()
     {
         { FigureType.None, 0 },
         { FigureType.ClosedTwo3, 2 },
@@ -31,6 +31,7 @@ internal class BoardWeightsAnalyser : IDisposable
     public Stone TargetStone => Analyser.TargetStone;
 
     public int this[int col, int row] => Weights[col, row];
+    public int FigureWeight( FigureType figure ) => FigureWeights[figure];
 
     public BoardWeightsAnalyser( BoardFiguresAnalyser analyser, int[,]? weights = null )
     {
