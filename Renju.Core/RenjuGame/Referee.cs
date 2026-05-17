@@ -48,14 +48,24 @@ internal class Referee : IReferee
     #endregion
 
     public Referee( IBoard board )
+        : this( board,
+              new BoardFiguresAnalyser( board, Stone.Black ),
+              new BoardFiguresAnalyser( board, Stone.White ) )
+    {
+    }
+
+    internal Referee(
+        IBoard board,
+        BoardFiguresAnalyser blackAnalyser,
+        BoardFiguresAnalyser whiteAnalyser )
     {
         Board = board;
         Board.StoneMoved += StoneMoved;
 
         BoardAnalyzers = new Dictionary<Stone, BoardFiguresAnalyser>
         {
-            { Stone.Black, new BoardFiguresAnalyser( board, Stone.Black ) },
-            { Stone.White, new BoardFiguresAnalyser( board, Stone.White ) },
+            { Stone.Black, blackAnalyser },
+            { Stone.White, whiteAnalyser },
         };
 
         foreach ( var analyzer in BoardAnalyzers.Values )
@@ -121,7 +131,13 @@ internal class Referee : IReferee
 
     public IReferee Clone( IBoard? board = null )
     {
-        return new Referee( board ?? Board.Clone() );
+        // A fresh Referee built only from the board would start with empty figures
+        // maps and lose the analysis state of every stone already on the board.
+        // Carry the figures state over by cloning the analysers onto the new board.
+        var clonedBoard = board ?? Board.Clone();
+        return new Referee( clonedBoard,
+            BoardAnalyzers[Stone.Black].Clone( clonedBoard ),
+            BoardAnalyzers[Stone.White].Clone( clonedBoard ) );
     }
 
     public bool IsGameOver { get; private set; }
