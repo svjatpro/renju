@@ -158,7 +158,10 @@ internal class BoardFiguresAnalyser : IDisposable
         var figuresMap = new Dictionary<FigureDirection, FigureType>[board.Size, board.Size];
         for ( var col = 0; col < board.Size; col++ )
             for ( var row = 0; row < board.Size; row++ )
-                figuresMap[col, row] = FiguresMap[col, row];
+                // Deep-copy the per-cell Dictionary. Shallow-copying the reference
+                // would alias state across clones, so a sibling node's ProcessRow
+                // mutation would corrupt this analyser's figures map.
+                figuresMap[col, row] = new Dictionary<FigureDirection, FigureType>( FiguresMap[col, row] );
 
         return new BoardFiguresAnalyser( board, TargetStone, figuresMap );
     }
