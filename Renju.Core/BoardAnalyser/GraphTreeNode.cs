@@ -17,7 +17,9 @@ internal class GraphTreeNode
     // from the AI's perspective. Higher = better for AI.
     public int SubtreeValue { get; set; }
 
-    public bool IsTerminal { get; init; }
+    // Settable: a win-in-2 "terminal" is a prediction; if the real game reaches
+    // such a node, the root must be re-opened and keep playing (see OnStoneMoved).
+    public bool IsTerminal { get; set; }
     public bool Expanded { get; set; }
 
     public Dictionary<Coord, GraphTreeNode> Children { get; } = new();

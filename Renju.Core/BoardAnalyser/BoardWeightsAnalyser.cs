@@ -44,8 +44,11 @@ internal class BoardWeightsAnalyser : IDisposable
             foreach (var cell in affectedCells)
             {
                 var cellFigures = analyser[cell.Col, cell.Row];
-                var weight = cellFigures.Values.Sum(f => FigureWeights[f]);
-                Weights[cell.Col, cell.Row] = weight;
+                Weights[cell.Col, cell.Row] =
+                    FigureWeights[cellFigures[FigureDirection.Horizontal]] +
+                    FigureWeights[cellFigures[FigureDirection.Vertical]] +
+                    FigureWeights[cellFigures[FigureDirection.DiagonalLeft]] +
+                    FigureWeights[cellFigures[FigureDirection.DiagonalRight]];
             }
         };
     }

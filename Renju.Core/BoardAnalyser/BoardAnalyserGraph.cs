@@ -8,13 +8,15 @@ public class BoardAnalyserGraph : IBoardAnalyser
     private readonly Stone AiStone;
     private readonly IBoard ActualBoard;
     private readonly GraphConfig Config;
+    private readonly Random Random;
     private GraphTreeNode Root;
 
-    public BoardAnalyserGraph( Stone stone, IBoard board, IReferee referee, GraphConfig? config = null )
+    public BoardAnalyserGraph( Stone stone, IBoard board, IReferee referee, GraphConfig? config = null, Random? random = null )
     {
         AiStone = stone;
         ActualBoard = board;
         Config = config ?? new GraphConfig();
+        Random = random ?? Random.Shared;
 
         Root = BuildInitialRoot();
         ExpandToDepth( Root, Config.Depth );
@@ -36,6 +38,7 @@ public class BoardAnalyserGraph : IBoardAnalyser
         GraphTreeNode? best = null;
         var bestValue = int.MinValue;
         var bestCenterDist = int.MaxValue;
+        var tieCount = 0;
 
         foreach ( var child in Root.Children.Values )
         {
@@ -48,6 +51,14 @@ public class BoardAnalyserGraph : IBoardAnalyser
                 best = child;
                 bestValue = child.SubtreeValue;
                 bestCenterDist = dist;
+                tieCount = 1;
+            }
+            // equal best candidates: pick one uniformly (reservoir sampling),
+            // so AI-vs-AI games are not identical replays
+            else if ( child.SubtreeValue == bestValue && dist == bestCenterDist &&
+                      Random.Next( ++tieCount ) == 0 )
+            {
+                best = child;
             }
         }
 
@@ -73,6 +84,14 @@ public class BoardAnalyserGraph : IBoardAnalyser
         else
         {
             Root = RebuildRootFromUnexpectedMove( move );
+        }
+
+        // A win-in-2 terminal is a prediction that cut the subtree. If the real
+        // game arrives here anyway (e.g. the opponent actually made that open
+        // four), the position must stay playable — reopen it for expansion.
+        if ( Root.IsTerminal && !Root.Referee.IsGameOver )
+        {
+            Root.IsTerminal = false;
         }
 
         ExpandToDepth( Root, Config.Depth );
@@ -131,14 +150,13 @@ public class BoardAnalyserGraph : IBoardAnalyser
 
     private GraphTreeNode CreateChildNode( GraphTreeNode parent, Move move )
     {
-        // Ply weight = Plain weight of this move on the parent's pre-move board.
+        // Ply weight = the mover's OWN Plain weight on the parent's pre-move board.
+        // The opponent's weight must NOT be added here (unlike candidate selection):
+        // crediting a blocking move with the blocked threat's weight makes the tree
+        // treat defence as profit, so threat lines cancel out instead of scoring
+        // negative. Blocking pays off through the subtree it avoids, not the cell.
         var selfWeights = move.Stone == Stone.Black ? parent.BlackWeights : parent.WhiteWeights;
-        var oppWeights = move.Stone == Stone.Black ? parent.WhiteWeights : parent.BlackWeights;
         var unsigned = selfWeights[move.Col, move.Row];
-        if ( parent.Referee.MoveAllowed( move.Col, move.Row, move.Stone.Opposite(), ignoreSequence: true ) )
-        {
-            unsigned += oppWeights[move.Col, move.Row];
-        }
         var signed = move.Stone == AiStone ? unsigned : -unsigned;
 
         var newBoard = parent.Board.Clone();
@@ -147,6 +165,27 @@ public class BoardAnalyserGraph : IBoardAnalyser
         var newReferee = new Referee( newBoard, newBlackWeights.Analyser, newWhiteWeights.Analyser );
 
         newBoard.PutStone( move );
+
+        // Win-in-2 short-circuit: a move that leaves the mover two or more
+        // five-completing cells (open four, four-four fork) has decided the
+        // game — the opponent can block only one. Score it near Five and stop
+        // expanding, UNLESS the opponent has an immediate five of their own:
+        // they move first, so the line stays open and min/max refutes it.
+        // This is what makes tempo visible at any depth: without it, odd depth
+        // ends on our own move and overplays attack, even depth ends on the
+        // opponent's and overplays defence.
+        var isTerminal = newReferee.IsGameOver;
+        if ( !isTerminal )
+        {
+            var moverWeights = move.Stone == Stone.Black ? newBlackWeights : newWhiteWeights;
+            var nextWeights = move.Stone == Stone.Black ? newWhiteWeights : newBlackWeights;
+            if ( CountFiveThreats( moverWeights, newBoard, upTo: 2 ) >= 2 &&
+                 CountFiveThreats( nextWeights, newBoard, upTo: 1 ) == 0 )
+            {
+                isTerminal = true;
+                signed += move.Stone == AiStone ? WinInTwoWeight : -WinInTwoWeight;
+            }
+        }
 
         return new GraphTreeNode
         {
@@ -157,9 +196,27 @@ public class BoardAnalyserGraph : IBoardAnalyser
             WhiteWeights = newWhiteWeights,
             NextToMove = move.Stone.Opposite(),
             PlyWeight = signed,
-            IsTerminal = newReferee.IsGameOver,
+            IsTerminal = isTerminal,
             Expanded = false
         };
+    }
+
+    // Slightly below Five so an actual immediate five always outranks a win-in-2.
+    private static readonly int WinInTwoWeight = BoardWeightsAnalyser.FigureWeights[FigureType.Five] - 2;
+
+    private static int CountFiveThreats( BoardWeightsAnalyser weights, IBoard board, int upTo )
+    {
+        var five = BoardWeightsAnalyser.FigureWeights[FigureType.Five];
+        var found = 0;
+        for ( var col = 0; col < board.Size; col++ )
+        {
+            for ( var row = 0; row < board.Size; row++ )
+            {
+                if ( board[col, row].Stone != Stone.None ) continue;
+                if ( weights[col, row] >= five && ++found >= upTo ) return found;
+            }
+        }
+        return found;
     }
 
     private void ExpandToDepth( GraphTreeNode node, int remainingDepth )

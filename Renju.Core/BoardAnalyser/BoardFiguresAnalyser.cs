@@ -1,38 +1,28 @@
-﻿namespace Renju.Core.BoardAnalyser;
+namespace Renju.Core.BoardAnalyser;
 
 internal class BoardFiguresAnalyser : IDisposable
 {
     #region Private fields
-    
-    private readonly Dictionary<FigureDirection, FigureType>[,] FiguresMap;
-    private static readonly Dictionary<FigureDirection, FigureType> OccupiedCell =
-        new()
-        {
-            { FigureDirection.Horizontal, FigureType.None },
-            { FigureDirection.Vertical, FigureType.None },
-            { FigureDirection.DiagonalLeft, FigureType.None },
-            { FigureDirection.DiagonalRight, FigureType.None },
-        };
+
+    // Flat figures map: 4 direction slots per cell, [(col * Size + row) * 4 + slot].
+    // A flat value array (vs a Dictionary per cell) makes Clone a single memcpy.
+    private readonly FigureType[] FiguresMap;
+    private const int DirectionCount = 4;
 
     #endregion
 
     #region Private methods
 
-    private void InitializeFiguresMap()
+    private int CellIndex( int col, int row ) => ( col * Board.Size + row ) * DirectionCount;
+
+    // FigureDirection enum values are 1..4
+    private static int DirectionSlot( FigureDirection direction ) => (int)direction - 1;
+
+    private void ClearCell( int col, int row )
     {
-        for ( var col = 0; col < Board.Size; col++ )
-        {
-            for ( var row = 0; row < Board.Size; row++ )
-            {
-                FiguresMap[col, row] = new Dictionary<FigureDirection, FigureType>
-                {
-                    {FigureDirection.Horizontal, FigureType.None},
-                    {FigureDirection.Vertical, FigureType.None},
-                    {FigureDirection.DiagonalLeft, FigureType.None},
-                    {FigureDirection.DiagonalRight, FigureType.None},
-                };
-            }
-        }
+        var idx = CellIndex( col, row );
+        for ( var slot = 0; slot < DirectionCount; slot++ )
+            FiguresMap[idx + slot] = FigureType.None;
     }
 
     private void ProcessRow(
@@ -43,15 +33,9 @@ internal class BoardFiguresAnalyser : IDisposable
         var rowFigures = RowParser.DefineBestFigures( row, TargetStone );
         for ( var i = 0; i < row.Length; i++ )
         {
+            if ( !rowFigures.ContainsKey( i ) ) continue;
             var cell = cellResolver( i );
-            var cellFigures = FiguresMap[cell.col, cell.row];
-            if ( rowFigures.ContainsKey( i ) )
-            {
-                if ( cellFigures[direction]! != rowFigures[i] )
-                {
-                    cellFigures[direction] = rowFigures[i];
-                }
-            }
+            FiguresMap[CellIndex( cell.col, cell.row ) + DirectionSlot( direction )] = rowFigures[i];
         }
     }
 
@@ -112,23 +96,14 @@ internal class BoardFiguresAnalyser : IDisposable
 
     #endregion
 
-    public BoardFiguresAnalyser( 
-        IBoard board, 
-        Stone targetStone, 
-        Dictionary<FigureDirection, FigureType>[,]? figuresMap = null )
+    public BoardFiguresAnalyser(
+        IBoard board,
+        Stone targetStone,
+        FigureType[]? figuresMap = null )
     {
         Board = board;
         TargetStone = targetStone;
-
-        if ( figuresMap == null )
-        {
-            FiguresMap = new Dictionary<FigureDirection, FigureType>[Board.Size, Board.Size];
-            InitializeFiguresMap();
-        }
-        else
-        {
-            FiguresMap = figuresMap;
-        }
+        FiguresMap = figuresMap ?? new FigureType[board.Size * board.Size * DirectionCount];
 
         Board.StoneMoved += ( _, move ) =>
         {
@@ -137,39 +112,35 @@ internal class BoardFiguresAnalyser : IDisposable
             // notify about move analysed with figures
             //  which are not 'potential' anymore but 'actual' in this context
             //  as the move is already processed for the cell
-            // be careful - clearing the figures map for the cell must be done after the event
-            MoveAnalysed?.Invoke( this, (move, FiguresMap[move.Col, move.Row], affectedCells) );
-            FiguresMap[move.Col, move.Row] = OccupiedCell;
+            // the figures are captured by value, so clearing the cell right
+            //  after is safe even if a handler keeps the payload
+            MoveAnalysed?.Invoke( this, (move, this[move.Col, move.Row], affectedCells) );
+            ClearCell( move.Col, move.Row );
         };
     }
 
     public readonly IBoard Board;
     public Stone TargetStone { get; init; }
-    
-    public IReadOnlyDictionary<FigureDirection, FigureType> this[int col, int row] => FiguresMap[col, row];
-    
+
+    public CellFigures this[int col, int row]
+    {
+        get
+        {
+            var idx = CellIndex( col, row );
+            return new CellFigures( FiguresMap[idx], FiguresMap[idx + 1], FiguresMap[idx + 2], FiguresMap[idx + 3] );
+        }
+    }
+
     public event EventHandler<(
         Move move,
-        Dictionary<FigureDirection, FigureType> figures,
+        CellFigures figures,
         List<Coord> affectedCells)>? MoveAnalysed;
 
-    public BoardFiguresAnalyser Clone( IBoard board )
-    {
-        var figuresMap = new Dictionary<FigureDirection, FigureType>[board.Size, board.Size];
-        for ( var col = 0; col < board.Size; col++ )
-            for ( var row = 0; row < board.Size; row++ )
-                // Deep-copy the per-cell Dictionary. Shallow-copying the reference
-                // would alias state across clones, so a sibling node's ProcessRow
-                // mutation would corrupt this analyser's figures map.
-                figuresMap[col, row] = new Dictionary<FigureDirection, FigureType>( FiguresMap[col, row] );
-
-        return new BoardFiguresAnalyser( board, TargetStone, figuresMap );
-    }
+    public BoardFiguresAnalyser Clone( IBoard board ) =>
+        new( board, TargetStone, (FigureType[])FiguresMap.Clone() );
 
     public void Dispose()
     {
-        for ( var col = 0; col < Board.Size; col++ )
-            for ( var row = 0; row < Board.Size; row++ )
-                FiguresMap[col, row].Clear();
+        Array.Clear( FiguresMap );
     }
 }

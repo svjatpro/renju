@@ -9,12 +9,14 @@ public class BoardAnalyserPlain : IBoardAnalyser
     private readonly IReferee Referee;
     private readonly BoardWeightsAnalyser BlackWeights;
     private readonly BoardWeightsAnalyser WhiteWeights;
+    private readonly Random Random;
 
-    public BoardAnalyserPlain( Stone stone, IBoard board, IReferee referee )
+    public BoardAnalyserPlain( Stone stone, IBoard board, IReferee referee, Random? random = null )
     {
         AiStone = stone;
         Board = board;
         Referee = referee;
+        Random = random ?? Random.Shared;
         BlackWeights = new BoardWeightsAnalyser( new BoardFiguresAnalyser( board, Stone.Black ) );
         WhiteWeights = new BoardWeightsAnalyser( new BoardFiguresAnalyser( board, Stone.White ) );
     }
@@ -29,6 +31,7 @@ public class BoardAnalyserPlain : IBoardAnalyser
 
         var bestWeight = -1;
         var bestCenterDist = int.MaxValue;
+        var tieCount = 0;
         var found = false;
         move = new Move( 0, 0, AiStone );
 
@@ -51,8 +54,15 @@ public class BoardAnalyserPlain : IBoardAnalyser
                 {
                     bestWeight = w;
                     bestCenterDist = dist;
+                    tieCount = 1;
                     move = new Move( col, row, AiStone );
                     found = true;
+                }
+                // equal best candidates: pick one uniformly (reservoir sampling),
+                // so AI-vs-AI games are not identical replays
+                else if ( w == bestWeight && dist == bestCenterDist && Random.Next( ++tieCount ) == 0 )
+                {
+                    move = new Move( col, row, AiStone );
                 }
             }
         }

@@ -28,16 +28,15 @@ internal class Referee : IReferee
         GameOver?.Invoke( this, Winner );
     }
 
-    private void MoveAnalysed( 
-        object? sender, 
-        (Move move, Dictionary<FigureDirection, FigureType> figures, List<Coord> affectedCells) e )
+    private void MoveAnalysed(
+        object? sender,
+        (Move move, CellFigures figures, List<Coord> affectedCells) e )
     {
         var analyzer = (BoardFiguresAnalyser) sender!;
         var (move, figures, _) = e;
-        if ( move.Stone == analyzer.TargetStone && 
-             figures.Any( f => 
-                 f.Value == FigureType.Five || 
-                 ( move.Stone == Stone.White && f.Value == FigureType.SixOrMore ) ) )
+        if ( move.Stone == analyzer.TargetStone &&
+             ( figures.Contains( FigureType.Five ) ||
+               ( move.Stone == Stone.White && figures.Contains( FigureType.SixOrMore ) ) ) )
         {
             IsGameOver = true;
             Winner = move.Stone;
@@ -95,7 +94,7 @@ internal class Referee : IReferee
             message = "It's not your turn.";
 
         else if ( stone == Stone.Black &&
-                  BoardAnalyzers[stone][col, row].Any( f => f.Value == FigureType.Five ) )
+                  BoardAnalyzers[stone][col, row].Contains( FigureType.Five ) )
         {
             // If Black makes a forbidden move, then the game will be won for White.
             // One exception is that, if Black makes a forbidden move and five in a row at the same time,
@@ -105,22 +104,22 @@ internal class Referee : IReferee
 
         // ---------------------------------------
         // 3x3
-        else if ( stone == Stone.Black && 
-                  BoardAnalyzers[stone][col, row].Count( f => f.Value == FigureType.OpenThree ) > 1 )
+        else if ( stone == Stone.Black &&
+                  BoardAnalyzers[stone][col, row].Count( FigureType.OpenThree ) > 1 )
         {
             message = "3x3 rule violation.";
         }
 
         // 4x4
-        else if ( stone == Stone.Black && 
-                  BoardAnalyzers[stone][col, row].Count( f => f.Value == FigureType.OpenFour ) > 1 )
+        else if ( stone == Stone.Black &&
+                  BoardAnalyzers[stone][col, row].Count( FigureType.OpenFour ) > 1 )
         {
             message = "4x4 rule violation.";
         }
 
         // 6+
-        else if ( stone == Stone.Black && 
-                  BoardAnalyzers[stone][col, row].Any( f => f.Value == FigureType.SixOrMore ) )
+        else if ( stone == Stone.Black &&
+                  BoardAnalyzers[stone][col, row].Contains( FigureType.SixOrMore ) )
         {
             message = "6+ rule violation.";
         }
