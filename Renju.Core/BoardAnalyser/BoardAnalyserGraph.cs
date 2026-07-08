@@ -20,15 +20,25 @@ public class BoardAnalyserGraph : IBoardAnalyser
         Random = random ?? Random.Shared;
 
         Root = BuildInitialRoot();
-        Expand();
-        ComputeSubtreeValue( Root );
 
         board.StoneMoved += OnStoneMoved;
     }
 
     public bool TryProceedNextMove( out Move move )
     {
-        if ( Root.NextToMove != AiStone || Root.Children.Count == 0 )
+        if ( Root.NextToMove != AiStone )
+        {
+            move = default!;
+            return false;
+        }
+
+        // All thinking happens here, on the AI's own turn — not in OnStoneMoved.
+        // That keeps per-move timing attributable to this player and makes the
+        // timeout a true per-move cap.
+        Expand();
+        ComputeSubtreeValue( Root );
+
+        if ( Root.Children.Count == 0 )
         {
             move = default!;
             return false;
@@ -94,9 +104,6 @@ public class BoardAnalyserGraph : IBoardAnalyser
         {
             Root.IsTerminal = false;
         }
-
-        Expand();
-        ComputeSubtreeValue( Root );
     }
 
     private GraphTreeNode BuildInitialRoot()

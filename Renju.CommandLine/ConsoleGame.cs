@@ -384,10 +384,7 @@ public class ConsoleGame( GameConfig config )
         if ( player.Type == PlayerType.Human )
             return new ConsolePlayer( name, () => (ReadPlayerMove( out var coord ), coord) );
 
-        var ai = Player.PcPlayer( name,
-            player.Type == PlayerType.Plain ? AiType.Plain : AiType.Graph,
-            new GraphConfig { Depth = player.Depth, TopK = player.TopK, TimeoutMs = player.Timeout } );
-        ai = new PlayerDebugWrapper( ai, ReadDebugPlayerMove );
+        var ai = new PlayerDebugWrapper( PlayerFactory.CreateAi( player, name ), ReadDebugPlayerMove );
         return player.MinDelay > 0 ? new PlayerDelayWrapper( ai, player.MinDelay ) : ai;
     }
 
@@ -456,14 +453,12 @@ public class ConsoleGame( GameConfig config )
             else
             {
                 var player = Game.CurrentPlayer;
-                WriteMessage( 
-                    $"{player.Name}'s move ...",
-                    Game.CurrentPlayer.Stone switch
-                    {
-                        Stone.Black => Layout.PlayerBlack,
-                        Stone.White => Layout.PlayerWhite,
-                        _ => Layout.Info
-                    },
+                // resolve the color via the players map: wrappers don't carry Stone
+                var stone = Game.Players[Stone.Black] == player ? Stone.Black : Stone.White;
+                var stoneChar = stone == Stone.Black ? Layout.StoneCharBlack : Layout.StoneCharWhite;
+                WriteMessage(
+                    $"{stoneChar} {player.Name}'s move ...",
+                    stone == Stone.Black ? Layout.PlayerBlack : Layout.PlayerWhite,
                     StatusRow );
                 Game.TryProceedMove();
             }

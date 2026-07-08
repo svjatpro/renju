@@ -49,6 +49,28 @@ renju --black plain --white graph:minDelay=500       # AI vs AI, watchable
 renju --board 15
 ```
 
+## Arena
+
+AI-vs-AI series runner — the measuring tool for AI changes: `renju --arena <N> --black <spec> --white <spec>`.
+
+- Colors alternate every game (`--no-alternate` to disable); results are reported per player, split by color.
+- `--seed <n>` makes the whole series reproducible; without it a random master seed is picked and printed, so any run can be replayed.
+- Both players must be AI; `minDelay` is ignored (runs at full speed), `timeout` is honored.
+- A game that exceeds board² moves or where a player fails to move counts as "stuck", not as a result.
+
+```
+renju --arena 100 --black plain --white graph:depth=4 --seed 42
+
+arena: plain (P1) vs graph:depth=4 (P2) - 100 games, board 19, seed 42
+
+P1  plain                   0 wins  (0 as black, 0 as white)
+P2  graph:depth=4         100 wins  (50 as black, 50 as white)
+draws 0, avg moves/game 36
+
+move time ms (p50/p95/max):  P1 0/0/19   P2 228/319/497
+total: 416.2 s
+```
+
 ## Config file
 
 Same settings as the CLI; JSON. Default `renju.json` in the current directory, or `--config <path>`.
@@ -61,7 +83,8 @@ if the CLI changes a player's *type*, that player's file options are discarded).
   "players": {
     "black": { "type": "human" },
     "white": { "type": "graph", "depth": 3, "topK": 10, "timeout": 0, "minDelay": 300 }
-  }
+  },
+  "arena": { "games": 100, "seed": 42, "alternate": true }
 }
 ```
 

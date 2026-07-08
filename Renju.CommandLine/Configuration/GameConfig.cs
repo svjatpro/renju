@@ -6,6 +6,9 @@ public record GameConfig
     public required int Board { get; init; }
     public required PlayerConfig Black { get; init; }
     public required PlayerConfig White { get; init; }
+
+    /// <summary>Set only in arena mode (CLI --arena).</summary>
+    public ArenaConfig? Arena { get; init; }
 }
 
 public record PlayerConfig

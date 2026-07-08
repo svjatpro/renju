@@ -18,7 +18,10 @@ internal class Program
             var file = ConfigFileLoader.Load( cli.ConfigPath );
             var config = ConfigResolver.Resolve( file, cli.Config );
 
-            new ConsoleGame( config ).Run();
+            if ( config.Arena != null )
+                RunArena( config );
+            else
+                new ConsoleGame( config ).Run();
             return 0;
         }
         catch ( ConfigException e )
@@ -27,5 +30,15 @@ internal class Program
             Console.Error.WriteLine( "run 'renju --help' for usage" );
             return 1;
         }
+    }
+
+    private static void RunArena( Configuration.GameConfig config )
+    {
+        var result = new Arena.ArenaRunner( config ).Run(
+            progress => Console.Write( $"\r{Arena.ArenaReport.Progress( progress, config.Arena!.Games )}" ) );
+
+        Console.WriteLine();
+        Console.WriteLine();
+        Console.WriteLine( Arena.ArenaReport.Format( result, config ) );
     }
 }

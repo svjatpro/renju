@@ -14,6 +14,9 @@ public static class CliParser
         int? board = null;
         PlayerSpec? black = null, white = null;
         string? configPath = null;
+        var arenaMode = false;
+        int? arenaGames = null, seed = null;
+        bool? alternate = null;
 
         for ( var i = 0; i < args.Length; i++ )
         {
@@ -21,6 +24,20 @@ public static class CliParser
             {
                 case "--help" or "-h":
                     return new CliResult { Help = true };
+                case "--arena":
+                    if ( arenaMode ) throw new ConfigException( "'--arena' given twice" );
+                    arenaMode = true;
+                    // the game count is optional here — it may come from the config file
+                    if ( i + 1 < args.Length && !args[i + 1].StartsWith( "--" ) )
+                        arenaGames = ParseInt( args[++i], "arena games" );
+                    break;
+                case "--seed":
+                    if ( seed != null ) throw new ConfigException( "'--seed' given twice" );
+                    seed = ParseInt( RequireValue( args, ref i ), "seed" );
+                    break;
+                case "--no-alternate":
+                    alternate = false;
+                    break;
                 case "--black":
                     if ( black != null ) throw new ConfigException( "'--black' given twice" );
                     black = ParsePlayerSpec( RequireValue( args, ref i ), "black player" );
@@ -42,9 +59,18 @@ public static class CliParser
             }
         }
 
+        if ( !arenaMode && ( seed != null || alternate != null ) )
+            throw new ConfigException( $"'{( seed != null ? "--seed" : "--no-alternate" )}' requires '--arena'" );
+
         return new CliResult
         {
-            Config = new ConfigLayer { Board = board, Black = black, White = white },
+            Config = new ConfigLayer
+            {
+                Board = board,
+                Black = black,
+                White = white,
+                Arena = arenaMode ? new ArenaSpec { Games = arenaGames, Seed = seed, Alternate = alternate } : null,
+            },
             ConfigPath = configPath,
         };
     }

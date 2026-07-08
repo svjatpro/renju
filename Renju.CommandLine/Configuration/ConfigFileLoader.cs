@@ -47,6 +47,12 @@ public static class ConfigFileLoader
             Board = model?.Board,
             Black = ToSpec( model?.Players?.Black, $"config file: black player" ),
             White = ToSpec( model?.Players?.White, $"config file: white player" ),
+            Arena = model?.Arena == null ? null : new ArenaSpec
+            {
+                Games = model.Arena.Games,
+                Seed = model.Arena.Seed,
+                Alternate = model.Arena.Alternate,
+            },
         };
     }
 
@@ -78,6 +84,14 @@ public static class ConfigFileLoader
     {
         public int? Board { get; set; }
         public FilePlayers? Players { get; set; }
+        public FileArena? Arena { get; set; }
+    }
+
+    private sealed class FileArena
+    {
+        public int? Games { get; set; }
+        public int? Seed { get; set; }
+        public bool? Alternate { get; set; }
     }
 
     private sealed class FilePlayers

@@ -13,6 +13,9 @@ public static class Usage
           --white <spec>   white player (default: graph)
           --board <n>      board size, 5-19 (default: 19)
           --config <path>  config file (default: ./renju.json if present)
+          --arena [N]      play N AI-vs-AI games, print totals (N may come from config)
+          --seed <n>       arena: master seed for a reproducible series
+          --no-alternate   arena: do not swap colors between games
           --help, -h       this help
 
         player spec:  human | plain[:opt=val,...] | graph[:opt=val,...]
@@ -24,6 +27,7 @@ public static class Usage
         examples:
           renju --white graph:depth=4,topK=8,minDelay=300
           renju --black plain --white graph:depth=5 --board 15
+          renju --arena 100 --black plain --white graph --seed 42
 
         config file (renju.json), same settings, CLI overrides it per value:
           {
@@ -31,7 +35,8 @@ public static class Usage
             "players": {
               "black": { "type": "human" },
               "white": { "type": "graph", "depth": 3, "topK": 10, "minDelay": 300 }
-            }
+            },
+            "arena": { "games": 100, "seed": 42, "alternate": true }
           }
         """;
 }
