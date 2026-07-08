@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Renju.Core.Extensions;
 using Renju.Core.RenjuGame;
 
@@ -19,7 +20,7 @@ public class BoardAnalyserGraph : IBoardAnalyser
         Random = random ?? Random.Shared;
 
         Root = BuildInitialRoot();
-        ExpandToDepth( Root, Config.Depth );
+        Expand();
         ComputeSubtreeValue( Root );
 
         board.StoneMoved += OnStoneMoved;
@@ -94,7 +95,7 @@ public class BoardAnalyserGraph : IBoardAnalyser
             Root.IsTerminal = false;
         }
 
-        ExpandToDepth( Root, Config.Depth );
+        Expand();
         ComputeSubtreeValue( Root );
     }
 
@@ -219,9 +220,31 @@ public class BoardAnalyserGraph : IBoardAnalyser
         return found;
     }
 
-    private void ExpandToDepth( GraphTreeNode node, int remainingDepth )
+    private void Expand()
     {
-        if ( remainingDepth <= 0 || node.IsTerminal ) return;
+        if ( Config.TimeoutMs <= 0 )
+        {
+            ExpandToDepth( Root, Config.Depth, deadline: null );
+            return;
+        }
+
+        // With a time cap, deepen iteratively: on expiry the tree is a complete
+        // shallower prediction (best found so far) instead of a lopsided one where
+        // only the first candidates were explored deep. Re-walking finished levels
+        // is cheap — nodes are never re-generated (Expanded flag).
+        var deadline = Stopwatch.StartNew();
+        for ( var depth = 1; depth <= Config.Depth && !Expired( deadline ); depth++ )
+        {
+            ExpandToDepth( Root, depth, deadline );
+        }
+    }
+
+    private bool Expired( Stopwatch? deadline ) =>
+        deadline != null && deadline.ElapsedMilliseconds >= Config.TimeoutMs;
+
+    private void ExpandToDepth( GraphTreeNode node, int remainingDepth, Stopwatch? deadline )
+    {
+        if ( remainingDepth <= 0 || node.IsTerminal || Expired( deadline ) ) return;
 
         if ( !node.Expanded )
         {
@@ -235,7 +258,7 @@ public class BoardAnalyserGraph : IBoardAnalyser
 
         foreach ( var child in node.Children.Values )
         {
-            ExpandToDepth( child, remainingDepth - 1 );
+            ExpandToDepth( child, remainingDepth - 1, deadline );
         }
     }
 

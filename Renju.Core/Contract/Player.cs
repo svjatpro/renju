@@ -23,5 +23,9 @@ public abstract class Player( string name ) : IPlayer
     //    return 0;
     //}
 
-    public static IPlayer PcPlayer( string name = "PC" ) => new PcPlayer( name );
+    public static IPlayer PcPlayer(
+        string name = "PC",
+        AiType type = AiType.Graph,
+        BoardAnalyser.GraphConfig? config = null,
+        Random? random = null ) => new PcPlayer( name, type, config, random );
 }

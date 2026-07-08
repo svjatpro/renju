@@ -1,12 +1,15 @@
-﻿using Renju.Core;
-using Renju.Core.Extensions;
+﻿using Renju.CommandLine.Configuration;
+using Renju.Core;
+using Renju.Core.BoardAnalyser;
+using Renju.Core.Players;
 using Renju.Core.RenjuGame;
 
 namespace Renju.CommandLine;
 
-public class ConsoleGame( Stone playerColor, int boardSize = 15 )
+public class ConsoleGame( GameConfig config )
 {
-    private Stone PcColor => playerColor.Opposite();
+    private GameConfig Config = config;
+    private int boardSize => Config.Board;
     private RenjuGame Game = null!;
     private bool BreakTheGame;
     private LayoutConfig Layout = null!;
@@ -182,17 +185,27 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
         // restore cursor position
         Console.SetCursorPosition( current.x, current.y );
     }
+    // The color of the only human player, or None for human/human and AI/AI games.
+    private Stone SingleHumanColor =>
+        ( Config.Black.Type == PlayerType.Human ) == ( Config.White.Type == PlayerType.Human )
+            ? Stone.None
+            : Config.Black.Type == PlayerType.Human ? Stone.Black : Stone.White;
+
     private void WriteGameOverMessage()
     {
-        var winner = Game.Referee.Winner;
         if ( !Game.Referee.IsGameOver )
             return;
-        else if ( winner == playerColor )
-            WriteMessage( "You win!", Layout.MessageWin, StatusRow );
-        else if ( winner == PcColor )
-            WriteMessage( "You lose!", Layout.MessageLoose, StatusRow );
-        else
+
+        var winner = Game.Referee.Winner;
+        var human = SingleHumanColor;
+        if ( winner == Stone.None )
             WriteMessage( "Draw!", Layout.MessageDraw, StatusRow );
+        else if ( human == Stone.None )
+            WriteMessage( $"{winner} wins!", Layout.MessageWin, StatusRow );
+        else if ( winner == human )
+            WriteMessage( "You win!", Layout.MessageWin, StatusRow );
+        else
+            WriteMessage( "You lose!", Layout.MessageLoose, StatusRow );
     }
 
     private void SetCursor( Coord? coord = null )
@@ -296,8 +309,8 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
                 Console.SetCursorPosition( current.x, current.y );
                 return;
             case ConsoleKey.N:
-                // start new game
-                playerColor = playerColor.Opposite();
+                // start new game, players swap colors
+                Config = Config with { Black = Config.White, White = Config.Black };
                 InitializeNewGame();
                 return;
             case ConsoleKey.H:
@@ -357,16 +370,33 @@ public class ConsoleGame( Stone playerColor, int boardSize = 15 )
         Layout = LayoutConfigs[0];
     }
 
+    private IPlayer CreatePlayer( PlayerConfig player, Stone color )
+    {
+        var name = player.Type switch
+        {
+            PlayerType.Human => "Human",
+            PlayerType.Plain => "Plain AI",
+            _ => "Graph AI",
+        };
+        if ( Config.Black.Type == Config.White.Type )
+            name += color == Stone.Black ? " (black)" : " (white)";
+
+        if ( player.Type == PlayerType.Human )
+            return new ConsolePlayer( name, () => (ReadPlayerMove( out var coord ), coord) );
+
+        var ai = Player.PcPlayer( name,
+            player.Type == PlayerType.Plain ? AiType.Plain : AiType.Graph,
+            new GraphConfig { Depth = player.Depth, TopK = player.TopK, TimeoutMs = player.Timeout } );
+        ai = new PlayerDebugWrapper( ai, ReadDebugPlayerMove );
+        return player.MinDelay > 0 ? new PlayerDelayWrapper( ai, player.MinDelay ) : ai;
+    }
+
     private void InitializeNewGame()
     {
-        // initialize players
-        var pc = new PlayerDebugWrapper( Player.PcPlayer( "Computer" ), ReadDebugPlayerMove );
-        var human = new ConsolePlayer( "Human", () => (ReadPlayerMove( out var coord ), coord) );
-
         // initialize game
         Game = new RenjuGame( boardSize,
-            playerColor == Stone.Black ? human : pc,
-            playerColor == Stone.White ? human : pc );
+            CreatePlayer( Config.Black, Stone.Black ),
+            CreatePlayer( Config.White, Stone.White ) );
         
         // initialize referee
         Game.Referee.GameOver += ( _, winner ) =>
